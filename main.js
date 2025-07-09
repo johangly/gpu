@@ -11,8 +11,8 @@ const __dirname = path.dirname(__filename); // <-- Esto reemplaza a la global __
 
 const createWindow = () => {
   const win = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1080,
+    height: 720,
     minWidth: 800,
     minHeight: 600,
     webPreferences: { // <-- Es buena práctica añadir esto para Electron
