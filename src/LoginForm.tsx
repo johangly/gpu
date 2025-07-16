@@ -1,9 +1,19 @@
-import React, { useState } from 'react';
+import React, { memo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, User, Lock } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
+import logo from './assets/logo-group.svg';
+// Extend the Window interface to include api
+declare global {
+  interface Window {
+    api: {
+      setTitle: (title: string) => void;
+      login: (credentials: { username: string; password: string }) => Promise<boolean>;
+    };
+  }
+}
 
-const FloatingParticles: React.FC = () => {
+const FloatingParticles: React.FC = memo(() => {
   const particles = Array.from({ length: 50 }, (_, i) => ({
     id: i,
     size: Math.random() * 8 + 2,
@@ -18,7 +28,7 @@ const FloatingParticles: React.FC = () => {
       {particles.map((particle) => (
         <motion.div
           key={particle.id}
-          className="absolute rounded-full bg-gradient-to-r from-purple-400/60 to-purple-600/30"
+          className="absolute rounded-full bg-gradient-to-r from-theme-1/60 to-theme-3/30"
           style={{
             width: particle.size,
             height: particle.size,
@@ -41,17 +51,17 @@ const FloatingParticles: React.FC = () => {
       ))}
     </div>
   );
-};
+});
 
-// Animated gradient orbs
-const GradientOrbs: React.FC = () => {
+// Envuelve el componente con React.memo
+const GradientOrbs: React.FC = memo(() => {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {/* Large orb 1 */}
       <motion.div
-        className="absolute w-96 h-96 rounded-full opacity-30"
+        className="absolute w-96 h-96 rounded-full opacity-20"
         style={{
-          background: 'radial-gradient(circle, rgba(100, 0, 182, 0.5) 0%, rgba(132, 0, 177, 0.4) 50%, transparent 70%)',
+          background: 'radial-gradient(circle, var(--color-theme-3) 0%, var(--color-theme-3) 50%, transparent 70%)',
           filter: 'blur(40px)',
         }}
         animate={{
@@ -71,7 +81,7 @@ const GradientOrbs: React.FC = () => {
       <motion.div
         className="absolute w-80 h-80 rounded-full opacity-25"
         style={{
-          background: 'radial-gradient(circle, rgba(163, 0, 171, 0.5) 0%, rgba(132, 0, 177, 0.4) 50%, transparent 70%)',
+          background: 'radial-gradient(circle, var(--color-theme-1) 0%, var(--color-theme-3) 50%, transparent 70%)',
           filter: 'blur(35px)',
           right: 0,
           top: '20%',
@@ -93,7 +103,7 @@ const GradientOrbs: React.FC = () => {
       <motion.div
         className="absolute w-64 h-64 rounded-full opacity-20"
         style={{
-          background: 'radial-gradient(circle, rgba(100, 0, 182, 0.6) 0%, rgba(163, 0, 171, 0.4) 60%, transparent 80%)',
+          background: 'radial-gradient(circle, var(--color-theme-3) 0%, var(--color-theme-2) 60%, transparent 80%)',
           filter: 'blur(25px)',
           bottom: '10%',
           left: '20%',
@@ -112,10 +122,10 @@ const GradientOrbs: React.FC = () => {
       />
     </div>
   );
-};
+});
 
-// Geometric shapes animation
-const GeometricShapes: React.FC = () => {
+// Envuelve el componente con React.memo
+const GeometricShapes: React.FC = memo(() => {
   const shapes = Array.from({ length: 8 }, (_, i) => ({
     id: i,
     size: Math.random() * 20 + 10,
@@ -131,7 +141,7 @@ const GeometricShapes: React.FC = () => {
       {shapes.map((shape) => (
         <motion.div
           key={shape.id}
-          className="absolute border border-purple-300/80"
+          className="absolute border border-theme-3/80"
           style={{
             width: shape.size,
             height: shape.size,
@@ -156,7 +166,7 @@ const GeometricShapes: React.FC = () => {
       ))}
     </div>
   );
-};
+});
 
 
 const LoginForm: React.FC = () => {
@@ -175,9 +185,10 @@ const LoginForm: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Login attempt:', formData);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); 
+    const autenticated = await window.api.login({username: formData.username, password: formData.password});
+    console.log('Form submitted:', autenticated);
   };
 
   const containerVariants = {
@@ -204,8 +215,8 @@ const LoginForm: React.FC = () => {
   const buttonVariants = {
     idle: { scale: 1 },
     hover: { 
-      scale: 1.02,
-      transition: { duration: 0.2 }
+      scale: 1.05,
+      transition: { duration: 0.15 }
     },
     tap: { scale: 0.98 }
   };
@@ -222,8 +233,8 @@ const LoginForm: React.FC = () => {
         className="absolute inset-0 opacity-40"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(100, 0, 182, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(100, 0, 182, 0.1) 1px, transparent 1px)
+            linear-gradient(var(--color-theme-3) 1px, transparent 1px),
+            linear-gradient(90deg, var(--color-theme-1) 1px, transparent 1px)
           `,
           backgroundSize: '50px 50px',
         }}
@@ -246,11 +257,7 @@ const LoginForm: React.FC = () => {
           {/* Logo Section */}
           <motion.div variants={itemVariants} className="text-center w-full p-10 flex flex-col items-center justify-center">
             <div className="inline-flex items-center justify-center w-24 h-24 bg-white rounded-2xl shadow-lg mb-6">
-              <svg width="60" height="19" viewBox="0 0 571 179" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M89.5397 178.847C133.263 178.847 170.009 147.217 177.451 105.587L177.684 104.889L178.149 102.099C178.382 100.005 178.614 97.9122 178.614 95.8191C178.847 93.726 178.847 91.6328 178.847 89.3071V85.1208C178.614 80.702 178.149 76.5157 177.219 72.3295H86.5162V105.587H137.914C131.17 125.821 112.099 140.473 89.5397 140.473C61.1661 140.473 38.3741 117.681 38.3741 89.3071C38.3741 61.1661 61.1661 38.3742 89.5397 38.3742C102.098 38.3742 113.494 42.793 122.565 50.4678H170.009C155.59 20.4662 124.89 0 89.5397 0C40.0021 0 0 40.0021 0 89.3071C0 134.193 33.2576 171.637 76.2831 177.917C80.702 178.614 84.8883 178.847 89.5397 178.847Z" fill="#6400B6" />
-                <path d="M327.763 4.18629C323.576 3.48857 319.39 3.02344 314.971 3.02344H231.711V175.823H270.085V118.378H314.971C348.229 118.378 375.207 93.9586 375.207 60.701C375.207 31.8622 354.741 9.53541 327.763 4.18629ZM270.085 85.1209V36.281H314.971C327.065 36.281 336.833 48.6073 336.833 60.701C336.833 70.9341 329.623 81.3997 320.088 84.1906C318.46 84.8883 316.599 85.1209 314.971 85.1209H270.085Z" fill="#8400B1" />
-                <path d="M570.807 104.424V3.02344H532.433V104.424C532.433 124.193 516.386 140.008 497.082 140.008C477.547 140.008 461.732 124.193 461.499 104.657V3.02344H423.125V104.424C423.125 145.124 456.15 178.382 497.082 178.382C503.594 178.382 510.106 177.451 515.921 175.823C519.874 174.893 523.828 173.265 527.317 171.87C534.759 168.381 541.503 163.962 547.085 158.613C549.876 156.288 551.969 153.729 554.062 151.171C556.155 148.613 558.249 146.054 559.877 143.031C565.458 134.193 568.714 124.193 570.342 113.494C570.575 110.704 570.807 107.68 570.807 104.424Z" fill="#A300AB" />
-              </svg>
+              <img src={logo} alt="Logo" className="w-16 h-16" />
             </div>
             <h1 className="text-3xl font-bold text-slate-800 mb-2">Sistema de Asistencia</h1>
             <p className="text-slate-600">Personal Universitario</p>
@@ -261,10 +268,12 @@ const LoginForm: React.FC = () => {
             variants={itemVariants}
             className="bg-white rounded-3xl shadow-xl p-8 border w-full border-slate-200/50"
           >
+
+            <h1 className="text-2xl font-bold text-slate-800 mb-4">Iniciar Sesión</h1>
             <form onSubmit={handleSubmit} className="space-y-6 w-full">
               {/* Username Field */}
               <motion.div variants={itemVariants}>
-                <label htmlFor="username" className="block text-sm font-semibold text-slate-700 mb-2">
+                <label htmlFor="username" className="flex justify-center w-fit mx-auto text-sm font-semibold text-slate-700 mb-2">
                   Usuario
                 </label>
                 
@@ -292,19 +301,17 @@ const LoginForm: React.FC = () => {
 
               {/* Password Field */}
               <motion.div variants={itemVariants}>
-                <label htmlFor="password" className="block text-sm font-semibold text-slate-700 mb-2">
+                <label htmlFor="password" className="flex justify-center w-fit mx-auto text-sm font-semibold text-slate-700 mb-2">
                   Contraseña
                 </label>
-                <div className="relative">
-                  <motion.div
-                    className={`absolute left-4 top-1/2 transform -translate-y-1/2 transition-colors duration-200 ${focusedField === 'password' ? 'text-purple-600' : 'text-slate-400'
+                <motion.div className={twMerge("relative")} animate={{ scale: focusedField === 'password' ? 1.02 : 1 }}>
+                  <div
+                    className={`absolute left-4 top-1/2 transform -translate-y-1/2 transition-colors duration-200 ${focusedField === 'password' ? 'text-purple-600 scale-110' : 'text-slate-400'
                       }`}
-                    animate={{ scale: focusedField === 'password' ? 1.1 : 1 }}
-                    transition={{ duration: 0.2 }}
                   >
                     <Lock size={20} />
-                  </motion.div>
-                  <motion.input
+                  </div>
+                  <input
                     type={showPassword ? 'text' : 'password'}
                     id="password"
                     name="password"
@@ -315,19 +322,17 @@ const LoginForm: React.FC = () => {
                     className="w-full pl-12 pr-12 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:outline-none focus:border-purple-500 focus:bg-white transition-all duration-300 text-slate-800 placeholder-slate-400"
                     placeholder="Ingrese su contraseña"
                     required
-                    whileFocus={{ scale: 1.01 }}
-                    transition={{ duration: 0.2 }}
                   />
                   <motion.button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-purple-600 transition-colors duration-200"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-purple-600 transition-colors duration-200 cursor-pointer"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                   >
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </motion.button>
-                </div>
+                </motion.div>
               </motion.div>
 
               {/* Login Button */}
@@ -338,7 +343,7 @@ const LoginForm: React.FC = () => {
                   initial="idle"
                   whileHover="hover"
                   whileTap="tap"
-                  className="w-full bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 text-white font-semibold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-purple-300"
+                  className="w-full bg-gradient-to-r from-theme-1 to-theme-3 text-white font-semibold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-purple-300"
                 >
                   <motion.span
                     className="flex items-center justify-center space-x-2"
@@ -355,7 +360,7 @@ const LoginForm: React.FC = () => {
             <motion.div variants={itemVariants} className="mt-6 text-center">
               <motion.a
                 href="#"
-                className="text-sm text-slate-500 hover:text-purple-600 transition-colors duration-200"
+                className="text-sm text-slate-500 hover:text-theme-3 transition-colors duration-200"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -364,6 +369,7 @@ const LoginForm: React.FC = () => {
             </motion.div>
           </motion.div>
 
+          {/* <button className='p-3 bg-blue-300 m-2 rounded-2xl' onClick={() => { window.api.setTitle("Prueba") }}>Prueba</button> */}
 
         </motion.div>
         {/* Footer */}
