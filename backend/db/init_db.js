@@ -3,9 +3,6 @@
 import { connection } from "./db_connection.js";
 import { GruposPersonal } from './models/grupos_personal.js';
 import { Personal } from './models/personal.js';
-dotenv.config();
-import dotenv from 'dotenv';  
-// import {db} from "./db.js"; // Importa la configuración de la base de datos y los modelos
 
 // Función para insertar los grupos de personal iniciales
 async function insertInitialGroups() {
@@ -79,6 +76,7 @@ async function createAdminUser() {
 // Función principal de inicialización
 async function initDatabase() {
   console.log('Iniciando la inicialización de la base de datos...');
+  
   try {
     await connection.query('SET FOREIGN_KEY_CHECKS = 0', { raw: true });
     // 1. Sincroniza los modelos con la base de datos (crea/actualiza tablas)

@@ -1,9 +1,10 @@
-import './App.css'
-import { LoginForm } from './LoginForm'
-import Container from './Container'
-import { useState, useMemo} from 'react'
-import type { Session } from './types'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+// App.tsx
+import './App.css';
+import { LoginForm } from './LoginForm';
+import Container from './Container';
+import { useState, useMemo } from 'react';
+import type { Session, MenuItem } from './types'; // Asegúrate de que MenuItem esté definido en types.ts
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 
 import {
@@ -16,22 +17,21 @@ import Sidebar from './components/Sidebar';
 import Overview from './pages/Overview';
 import Reports from './pages/Reports';
 import Employees from './pages/Employees';
-import type { MenuItem } from './types';
+// import Settings from './pages/Settings'; // Descomenta si usas la página de Settings
 
 function App() {
-
   const [session, setSession] = useState<Session>({
-    token:"wdwdwdwdsawqwdsa",
+    token: "",
     user: {
       id_empleado: 0,
-      cedula: "232",
-      nombre: "johangly",
-      apellido: "sucre",
-      usuario: "admin",
+      cedula: "",
+      nombre: "",
+      apellido: "",
+      usuario: "",
       id_grupo: 0,
-      activo: true
+      activo: false
     }
-  })
+  });
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -40,7 +40,7 @@ function App() {
       id: 'overview',
       label: 'Vista General',
       icon: BarChart3,
-      path: '/',
+      path: '/', // Ruta base
     },
     {
       id: 'reports',
@@ -63,14 +63,18 @@ function App() {
     // }
   ], []);
 
+  console.log("session", session);
 
   const handleSidebarToggle = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
+  // Lógica de renderizado condicional basada en la sesión
+  const isAuthenticated = session.token && session.user.activo;
+
   return (
-    <Router>
-      { session.token && session.user.activo && (
+    <Router> {/* HashRouter ya está importado como Router */}
+      {isAuthenticated ? (
         <div className="flex h-screen bg-gray-50">
           <Sidebar
             isCollapsed={sidebarCollapsed}
@@ -79,27 +83,28 @@ function App() {
           />
           <main className="flex-1 overflow-auto">
             <div className="p-8">
+              <h1 className="text-3xl font-bold mb-6">Bienvenido {session.user.nombre}</h1>
               <AnimatePresence mode="wait">
                 <Routes>
+                  {/* La ruta raíz '/' se renderizará cuando la URL sea http://localhost:5173/#/ */}
                   <Route path="/" element={<Overview />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/employees" element={<Employees />} />
                   {/* <Route path="/settings" element={<Settings />} /> */}
+                  {/* Redirecciona cualquier ruta no encontrada a la vista general */}
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </AnimatePresence>
             </div>
           </main>
         </div>
-      )}
-
-      { !session.token && !session.user.activo && (
+      ) : (
         <Container>
           <LoginForm setSession={setSession} />
         </Container>
       )}
     </Router>
-  )
+  );
 }
 
-export default App
+export default App;

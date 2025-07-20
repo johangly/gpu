@@ -30,7 +30,7 @@ const Employees: React.FC = () => {
     return matchesGroup && matchesSearch;
   });
 
-
+  console.log(groups,'groups');
 
   // modal states
   const [isModalOpen, setIsModalOpen] = useState(false);

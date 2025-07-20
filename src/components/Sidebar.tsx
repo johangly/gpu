@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { NavLink } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import type { SidebarProps } from '../types';
+import logo from '../assets/logo-group.svg'
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, menuItems }) => {
   return (
@@ -25,7 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, menuItems }) =
                 className="flex items-center space-x-3"
               >
                 <img 
-                  src="/src/assets/logo-group.svg" 
+                  src={logo}
                   alt="Universidad Logo" 
                   className="w-10 h-10"
                 />
@@ -45,7 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, menuItems }) =
               className="mx-auto"
             >
               <img 
-                src="/src/assets/logo-group.svg" 
+                src={logo} 
                 alt="Universidad Logo" 
                 className="w-8 h-8"
               />

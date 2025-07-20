@@ -183,14 +183,18 @@ const LoginForm: React.FC<{ setSession: React.Dispatch<React.SetStateAction<Sess
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); 
+    console.log('enviando formulario')
     const authenticated = await window.api.login({username: formData.username, password: formData.password});
 
     // If authenticated is an object with token and user, update session
     if (authenticated && typeof authenticated === 'object' && 'token' in authenticated && 'user' in authenticated && authenticated.success === true) {
+      console.log('inicio de sesion exitoso')
       setSession({
         token: authenticated.token,
         user: authenticated.user
       });
+    } else {
+      console.log("ERROR al iniciar sesion:",authenticated)
     }
   };
 

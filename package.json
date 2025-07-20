@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "electron": "electron ./main.js --no-sandbox",
     "dist": "electron-builder",
+    "postinstall": "electron-rebuild",
     "main": "electron.js",
     "start": "electron-forge start",
     "package": "electron-forge package --arch=\"ia32\" --platform=\"win32\"",
