@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import isDev from 'electron-is-dev';
 import { z } from 'zod';
 import { Personal } from './backend/db/models/personal.js';
+import { GruposPersonal } from './backend/db/models/grupos_personal.js';
 import argon2 from 'argon2';
 // === Función handleLogin para autenticar usuarios con Sequelize y Argon2 ===
 /**
@@ -52,6 +53,7 @@ async function handleLogin(event, credentials) {
       return {
         success: true,
         error: null,
+        token:'9312766kssb2123wx',
         user: {
           id_empleado: user.id_empleado,
           cedula: user.cedula,
@@ -70,6 +72,17 @@ async function handleLogin(event, credentials) {
   } catch (dbError) {
     console.error('Database or Argon2 error during login:', dbError);
     return { success: false, error: { general: 'Error en el servidor. Por favor, inténtelo de nuevo.' }, user: null };
+  }
+}
+async function handleGetGroups(event) {
+  try {
+    console.log("ENTRANDO")
+    const groups = await GruposPersonal.findAll({raw:true});
+    console.log('Fetched groups:!!!!!!!!!!!!', groups);
+    return { success: true, groups };
+  } catch (error) {
+    console.error('Error fetching groups:', error);
+    return { success: false, error: { general: 'Error fetching groups.' } };
   }
 }
 
@@ -102,17 +115,6 @@ const loginSchema = z.object({
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-function handleSetTitle(event, title) {
-  const webContents = event.sender
-  const win = BrowserWindow.fromWebContents(webContents)
-  win.setTitle(title)
-}
-
-function handleGetTitle() {
-  console.log('Getting title...');
-  return true;
-}
-
 const createWindow = () => {
   const win = new BrowserWindow({
     width: 1080,
@@ -120,6 +122,7 @@ const createWindow = () => {
     minWidth: 800,
     minHeight: 600,
     webPreferences: { 
+      enablePreferredSizeMode: true,
       nodeIntegration: true, // Permite usar módulos de Node.js en el renderizador (si lo necesitas)
       contextIsolation: true, // Desactiva el aislamiento de contexto (cuidado con esto en producción)
       preload: `${path.join(__dirname)}/preload.js`, // Ruta al archivo preload.js
@@ -141,8 +144,8 @@ const createWindow = () => {
 
 app.whenReady().then(() => {
   try {
-    ipcMain.on('set-title', handleGetTitle);
     ipcMain.handle('login', handleLogin)
+    ipcMain.handle('getGroups', handleGetGroups)
   } catch (error) {
     console.error('Error setting up IPC handler:', error);
   }
