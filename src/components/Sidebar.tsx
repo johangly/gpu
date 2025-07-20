@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NavLink } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { SidebarProps } from '../types';
+import { ChevronLeft } from 'lucide-react';
+import type { SidebarProps } from '../types';
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, menuItems }) => {
   return (

@@ -1,21 +1,62 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Search, UserPlus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search } from 'lucide-react';
 import { useAttendanceData } from '../hooks/useAttendanceData';
 import { getStatusColor, getStatusIcon, getStatusLabel } from '../utils/statusUtils';
 import GroupFilter from '../components/GroupFilter';
+import userPlus from '../assets/user-plus.png'
+import type { Transition } from 'framer-motion'
+import { AddUser } from '../components/AddUser';
+import { fetchGroups } from '../utils/getGroups';
+import type { Group } from '../types';
 
 const Employees: React.FC = () => {
   const [selectedGroup, setSelectedGroup] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const { employees } = useAttendanceData();
+  const [groups, setGroups] = useState<Group[]>([]); 
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      const groups = await fetchGroups();
+      setGroups(groups);
+    };
+    fetchData();
+  }, []);
 
   const filteredEmployees = employees.filter(employee => {
     const matchesGroup = selectedGroup === 'all' || employee.department.toLowerCase() === selectedGroup;
-    const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         employee.position.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) || employee.position.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesGroup && matchesSearch;
   });
+
+
+
+  // modal states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const backdropVariants = {
+    visible: { opacity: 1 },
+    hidden: { opacity: 0 },
+  };
+
+  // Variantes de animación para el modal (contenido)
+  const modalVariants = {
+    hidden: {
+      y: "-20vh", // Empieza fuera de la pantalla (arriba)
+      opacity: 0,
+    },
+    visible: {
+      y: "0", // Se mueve a su posición final
+      opacity: 1,
+      transition: { delay: 0, type: "spring", stiffness: 50 } as Transition, // Animación de resorte
+    },
+    exit: {
+      y: "100vh", // Sale hacia abajo
+      opacity: 0,
+      transition: { duration: 0.4 },
+    },
+  };
 
   return (
     <motion.div
@@ -26,15 +67,15 @@ const Employees: React.FC = () => {
       className="space-y-8"
     >
       <div className="flex justify-between items-center">
-        <div>
-          <motion.h1 
+        <div className='flex justify-center items-start flex-col'>
+          <motion.h1
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-3xl font-bold text-gray-900 mb-2"
           >
             Personal
           </motion.h1>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -43,24 +84,67 @@ const Employees: React.FC = () => {
             Directorio completo del personal universitario
           </motion.p>
         </div>
-        
         <motion.button
+          onClick={() => setIsModalOpen(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700 transition-colors shadow-lg"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700 transition-colors shadow-lg"
         >
-          <UserPlus className="w-4 h-4" />
+          <img className='invert w-4 h-4' src={userPlus} alt="Agregar Personal" />
           <span>Agregar Personal</span>
         </motion.button>
+        <AnimatePresence>
+          {isModalOpen && (
+            // Overlay del modal
+            <motion.div
+              className="fixed min-h-screen overflow-y-auto inset-0 bg-slate-900/50 bg-opacity-70 backdrop-blur-sm flex items-start justify-center z-50 p-4"
+              variants={backdropVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              onClick={() => setIsModalOpen(false)} // Cierra el modal al hacer clic fuera
+            >
+              {/* Contenido del modal */}
+              <motion.div
+                className="bg-white rounded-2xl shadow-2xl p-8 max-w-3xl w-full text-center relative overflow-hidden transform"
+                variants={modalVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                onClick={(e) => e.stopPropagation()} // Evita que el clic en el modal cierre el overlay
+              >
+                <h2 className="text-3xl font-bold text-theme-3 mb-4">
+                  Agregar Nuevo Personal
+                </h2>
+                <p className="text-gray-700 mb-6 leading-relaxed">
+                  Aqui podras crear un nuevo usuario para el sistema, por favor completa los campos requeridos.
+                </p>
+                <AddUser groups={groups} onAddUser={(user) => console.log(user)} />
+                <motion.button
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-6 py-3 bg-red-500 text-white font-semibold rounded-lg shadow-md hover:bg-theme-4 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-theme-3 focus:ring-opacity-75"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Cerrar
+                </motion.button>
+
+                {/* Elementos decorativos (opcional) */}
+                <div className="absolute top-0 left-0 w-full h-2 bg-theme-3 rounded-t-2xl"></div>
+                <div className="absolute bottom-0 left-0 w-full h-2 bg-theme-3 rounded-b-2xl"></div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      <GroupFilter selectedGroup={selectedGroup} onGroupChange={setSelectedGroup} />
+      <GroupFilter groups={groups} selectedGroup={selectedGroup} onGroupChange={setSelectedGroup} />
 
       {/* Search Bar */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
@@ -90,7 +174,7 @@ const Employees: React.FC = () => {
               className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200"
             >
               <div className="flex items-center space-x-4 mb-4">
-                <motion.div 
+                <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: index * 0.1 + 0.2 }}
@@ -105,13 +189,11 @@ const Employees: React.FC = () => {
                   <p className="text-sm text-gray-500">{employee.position}</p>
                 </div>
               </div>
-              
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Departamento</span>
                   <span className="text-sm font-medium text-gray-900">{employee.department}</span>
                 </div>
-                
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Estado</span>
                   <span className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(employee.status)}`}>
@@ -119,14 +201,12 @@ const Employees: React.FC = () => {
                     <span>{getStatusLabel(employee.status)}</span>
                   </span>
                 </div>
-                
                 {employee.checkIn && (
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Entrada</span>
                     <span className="text-sm font-medium text-gray-900">{employee.checkIn}</span>
                   </div>
                 )}
-                
                 {employee.checkOut && (
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Salida</span>
@@ -134,8 +214,8 @@ const Employees: React.FC = () => {
                   </div>
                 )}
               </div>
-              
-              <motion.div 
+
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: index * 0.1 + 0.4 }}

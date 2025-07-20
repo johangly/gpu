@@ -5,13 +5,29 @@ import { useAttendanceData } from '../hooks/useAttendanceData';
 import MetricCard from '../components/MetricCard';
 import ProgressBar from '../components/ProgressBar';
 import GroupFilter from '../components/GroupFilter';
+import { fetchGroups } from '../utils/getGroups';
 
 const Overview: React.FC = () => {
   const [selectedGroup, setSelectedGroup] = useState('all');
   const { groupData, weeklyData, getFilteredData } = useAttendanceData();
+  const filteredData = getFilteredData(selectedGroup.toLowerCase());
 
-  const filteredData = getFilteredData(selectedGroup);
+  const [groups, setGroups] = useState<{
+    id_grupo: string,
+    id_name: string,
+    nombre_grupo: string,
+    creado_en: string,
+    actualizado_en: string,
+  }[]>([]);
 
+  React.useEffect(() => {
+    const fetchData = async () => {
+      const groups = await fetchGroups();
+      setGroups(groups);
+    };
+    fetchData();
+  }, []);
+  
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -38,7 +54,7 @@ const Overview: React.FC = () => {
         </motion.p>
       </div>
 
-      <GroupFilter selectedGroup={selectedGroup} onGroupChange={setSelectedGroup} />
+      <GroupFilter groups={groups} selectedGroup={selectedGroup} onGroupChange={setSelectedGroup} />
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Bell, Shield, Database, Users, Clock } from 'lucide-react';
+import { Bell, Shield, Database, Users, Clock } from 'lucide-react';
 
 const Settings: React.FC = () => {
   const settingsSections = [

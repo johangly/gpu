@@ -3,15 +3,10 @@ import { motion } from 'framer-motion';
 import { Eye, EyeOff, User, Lock } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import logo from './assets/logo-group.svg';
+
+import type { Session } from './types';
 // Extend the Window interface to include api
-declare global {
-  interface Window {
-    api: {
-      setTitle: (title: string) => void;
-      login: (credentials: { username: string; password: string }) => Promise<boolean>;
-    };
-  }
-}
+
 
 const FloatingParticles: React.FC = memo(() => {
   const particles = Array.from({ length: 50 }, (_, i) => ({
@@ -169,7 +164,8 @@ const GeometricShapes: React.FC = memo(() => {
 });
 
 
-const LoginForm: React.FC = () => {
+
+const LoginForm: React.FC<{ setSession: React.Dispatch<React.SetStateAction<Session>> }> = ({ setSession }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
@@ -187,8 +183,15 @@ const LoginForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); 
-    const autenticated = await window.api.login({username: formData.username, password: formData.password});
-    console.log('Form submitted:', autenticated);
+    const authenticated = await window.api.login({username: formData.username, password: formData.password});
+
+    // If authenticated is an object with token and user, update session
+    if (authenticated && typeof authenticated === 'object' && 'token' in authenticated && 'user' in authenticated && authenticated.success === true) {
+      setSession({
+        token: authenticated.token,
+        user: authenticated.user
+      });
+    }
   };
 
   const containerVariants = {

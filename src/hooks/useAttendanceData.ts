@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Employee, AttendanceData, GroupData } from '../types';
+import type { Employee, AttendanceData, GroupData } from '../types';
 
 export const useAttendanceData = () => {
   const groupData: Record<string, GroupData> = useMemo(() => ({
@@ -57,6 +57,7 @@ export const useAttendanceData = () => {
 
   const getFilteredData = (selectedGroup: string) => {
     if (selectedGroup === 'all') return getTotalData;
+    console.log(selectedGroup, 'selectedGroup', groupData[selectedGroup as keyof typeof groupData]);
     return groupData[selectedGroup as keyof typeof groupData];
   };
 

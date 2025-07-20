@@ -4,15 +4,25 @@ import { useAttendanceData } from '../hooks/useAttendanceData';
 import { getStatusColor, getStatusIcon, getStatusLabel } from '../utils/statusUtils';
 import ProgressBar from '../components/ProgressBar';
 import GroupFilter from '../components/GroupFilter';
-
+import { fetchGroups } from '../utils/getGroups';
+import type { Group } from '../types';
 const Reports: React.FC = () => {
   const [selectedReport, setSelectedReport] = useState('daily');
   const [selectedGroup, setSelectedGroup] = useState('all');
   const { employees, groupData } = useAttendanceData();
+  const [groups, setGroups] = useState<Group[]>([]);
 
   const filteredEmployees = selectedGroup === 'all' 
     ? employees 
     : employees.filter(emp => emp.department.toLowerCase() === selectedGroup);
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      const groups = await fetchGroups();
+      setGroups(groups);
+    };
+    fetchData();
+  }, []);
 
   const reportTypes = [
     { id: 'daily', label: 'Diario' },
@@ -46,7 +56,7 @@ const Reports: React.FC = () => {
         </motion.p>
       </div>
 
-      <GroupFilter selectedGroup={selectedGroup} onGroupChange={setSelectedGroup} />
+      <GroupFilter groups={groups} selectedGroup={selectedGroup} onGroupChange={setSelectedGroup} />
 
       {/* Report Type Selector */}
       <motion.div 
@@ -138,7 +148,7 @@ const Reports: React.FC = () => {
           {selectedReport === 'weekly' && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Object.entries(groupData).map(([key, data], index) => (
+                {Object.entries(groupData).map(([key], index) => (
                   <motion.div
                     key={key}
                     initial={{ opacity: 0, scale: 0.9 }}

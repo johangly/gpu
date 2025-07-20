@@ -1,3 +1,16 @@
+export interface Session {
+  token: string;
+  user: {
+    id_empleado: number;
+    cedula: string;
+    nombre: string;
+    apellido: string;
+    usuario: string;
+    id_grupo: number;
+    activo: boolean;
+  }
+}
+
 export interface Employee {
   id: string;
   name: string;
@@ -27,7 +40,7 @@ export interface GroupData {
 export interface MenuItem {
   id: string;
   label: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ className?: string }>;
   path: string;
   badge?: number;
 }
@@ -36,4 +49,12 @@ export interface SidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
   menuItems: MenuItem[];
+}
+
+export interface Group {
+  id_grupo: string,
+  id_name: string,
+  nombre_grupo: string,
+  creado_en: string,
+  actualizado_en: string,
 }
