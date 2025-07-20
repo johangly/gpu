@@ -61,10 +61,10 @@ const icons = {
   'obrero': 'Hammer',
 }
 
-const AddUser: React.FC<AddUserProps> = ({ groups,onAddUser }) => {
+const AddUser: React.FC<AddUserProps> = ({ groups, onAddUser }) => {
   // const [name, setName] = useState('');
   // const [email, setEmail] = useState('');
-  
+
   // Opciones de ejemplo con iconos
   const options: OptionType[] = [
     ...groups.map(group => ({
@@ -72,7 +72,7 @@ const AddUser: React.FC<AddUserProps> = ({ groups,onAddUser }) => {
       label: group.nombre_grupo,
       icon: icons[group.id_name as keyof typeof icons] ? icons[group.id_name as keyof typeof icons] : undefined, // Asigna el icono si existe
     })),
-    
+
     // { value: 'dashboard', label: 'Dashboard', icon: 'Home' },
     // { value: 'profile', label: 'Mi Perfil', icon: 'User' },
     // { value: 'settings', label: 'Configuración', icon: 'Settings' },
@@ -173,12 +173,12 @@ const AddUser: React.FC<AddUserProps> = ({ groups,onAddUser }) => {
             selectedOption={selectedOption}
             onSelect={handleOptionChange}
             placeholder="Selecciona una opción..."
-            // focusedField={focusedField}
+          // focusedField={focusedField}
           />
           <motion.div variants={itemVariants} className='flex flex-col gap-y-4'>
             {inputs.map((input) => {
               if (input.type === 'group' && Array.isArray(input.inputs)) {
-                return ( 
+                return (
                   <div className='flex gap-x-3'>
                     {input.inputs.map((subInput) => (
                       <motion.div key={subInput.id} className={twMerge("relative w-full")} animate={{ scale: focusedField === subInput.id ? 1.02 : 1 }}>
@@ -235,9 +235,9 @@ const AddUser: React.FC<AddUserProps> = ({ groups,onAddUser }) => {
                         whileTap={{ scale: 0.9 }}
                       >
                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                        </motion.button>
+                      </motion.button>
                     </motion.div>
-                    
+
                   )
                 } else {
                   return (
@@ -263,27 +263,18 @@ const AddUser: React.FC<AddUserProps> = ({ groups,onAddUser }) => {
                     </motion.div>
                   )
                 }
-              
+
               }
-              
+
             })}
           </motion.div>
-          
-          <label className="block text-lg font-medium text-gray-700 flex flex-col">
-            <span className='text-left mb-2'>Cedula</span>
-            <input type="text" className='mt-1 block w-full pl-3 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:border-1 border-slate-200 border-1 sm:text-lg rounded-md shadow-sm transition-all duration-200' />
-          </label>
-          <label className="block text-lg font-medium text-gray-700 flex flex-col">
-            <span className='text-left mb-2'>Clave</span>
-            <input type="text" className='mt-1 block w-full pl-3 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:border-1 border-slate-200 border-1 sm:text-lg rounded-md shadow-sm transition-all duration-200' />
-          </label>
           {selectedOption && (
             <p className="mt-2 text-sm text-gray-600">
               {/* Has seleccionado: <span className="font-semibold text-blue-700">{selectedOption}</span> */}
             </p>
           )}
         </div>
-        
+
         {/* Botón de Envío */}
         <button
           type="submit"
@@ -292,7 +283,7 @@ const AddUser: React.FC<AddUserProps> = ({ groups,onAddUser }) => {
           Enviar Formulario
         </button>
       </form>
-   </div>
+    </div>
   );
 };
 
