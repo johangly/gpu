@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 // Importa los iconos de Lucide React que vayas a usar
-import { Home, User, Settings, Mail, ChevronDown, Check, ShieldUser, GraduationCap, Hammer } from 'lucide-react';
+import { Home, User, Settings, Mail, ChevronDown, Check, ShieldUser, GraduationCap, Hammer, ScrollText } from 'lucide-react';
 
 import type { LucideIcon } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
+import { motion } from 'framer-motion';
 
 interface CustomSelectWithIconsProps {
   options: OptionType[];
@@ -14,6 +15,7 @@ interface CustomSelectWithIconsProps {
 }
 
 interface OptionType {
+  id: string;
   value: string;
   label: string;
   icon?: string; // 'icon' es opcional, puede ser una cadena que representa el nombre del icono
@@ -53,30 +55,48 @@ function CustomSelectWithIcons({ options, selectedOption, onSelect, placeholder 
     Mail,
     ShieldUser,
     GraduationCap,
-    Hammer
+    Hammer,
+    ScrollText
     // Añade más iconos aquí si los necesitas en tus opciones
   };
 
+  const selectElement = {
+    rest: { opacity: 1 },
+    hover: { opacity: 1 },
+  }
+
+  const selectElementIcon = {
+    rest: { scale: 1 },
+    hover: { scale: 1.1 },
+  }
+
+  const selectElementText = {
+    rest: { scale: 1 },
+    hover: { scale: 1.03 },
+  }
+
   // Determina el icono y la etiqueta a mostrar en el botón principal
-  const displayIconComponent = selectedOption?.icon ? IconMap[selectedOption.icon] : null;
+  const displayIconComponent = selectedOption && selectedOption.icon ? IconMap[selectedOption.icon] : IconMap['ScrollText']; // Usa 'ScrollText' como icono por defecto si no hay uno seleccionado
   const displayLabel = selectedOption ? selectedOption.label : placeholder;
 
   return (
-    <div className="relative w-full" ref={selectRef}>
+    <div className="relative w-full mb-4" ref={selectRef}>
       {/* Botón que muestra la opción seleccionada y abre/cierra el desplegable */}
       <button
         type="button"
         onFocus={() => setFocusedField('departamento')}
         onBlur={() => setFocusedField(null)}
-        className={twMerge("flex items-center justify-between w-full w-full pl-4 pr-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:outline-none transition-all duration-300 text-slate-800 placeholder-slate-400", focusedField === 'departamento' ? 'border-purple-500 bg-white' : '')}
+        className={twMerge("flex items-center justify-between w-full pl-4 pr-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:outline-none transition-all duration-300 text-slate-800 placeholder-slate-400", focusedField === 'departamento' ? 'border-theme-3 bg-white' : '')}
         // className="flex items-center justify-between w-full px-5 py-3 bg-white border border-gray-300 rounded-lg shadow-sm text-gray-700 hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out"
         onClick={() => setIsOpen(!isOpen)}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
         <div className="flex items-center">
-          {displayIconComponent && React.createElement(displayIconComponent, { className: "w-5 h-5 mr-3 text-gray-600" })}
-          <span className={`${selectedOption ? 'text-gray-800' : 'text-gray-500'} font-medium`}>
+          {displayIconComponent && React.createElement(displayIconComponent, {
+            className: `absolute left-4 top-1/2 transform -translate-y-1/2 transition-colors duration-200 w-5 h-5 ${focusedField === 'departamento' ? 'text-theme-3 scale-110' : 'text-slate-400'
+          }` })}
+          <span className={`${selectedOption ? 'text-gray-800' : 'text-slate-400'} pl-8 font-regular`}>
             {displayLabel}
           </span>
         </div>
@@ -86,7 +106,7 @@ function CustomSelectWithIcons({ options, selectedOption, onSelect, placeholder 
       {/* Lista desplegable de opciones */}
       {isOpen && (
         <ul
-          className="absolute z-10 w-full mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto ring-1 ring-black ring-opacity-5 focus:outline-none animate-fade-in-down"
+          className="absolute z-10 w-full mt-2 bg-slate-50 border-2 border-theme-3 rounded-lg shadow-lg max-h-60 overflow-y-auto focus:outline-none animate-fade-in-down"
           tabIndex={-1} // Permite que la lista sea enfocable pero no en el orden de tabulación normal
           role="listbox"
           aria-labelledby="select-button"
@@ -96,20 +116,29 @@ function CustomSelectWithIcons({ options, selectedOption, onSelect, placeholder 
             const isSelected = selectedOption && selectedOption.value === option.value;
             if (option.value !== "all") {
               return (
-                <li
+                <motion.li
                   key={option.value}
-                  className={`flex items-center px-4 py-3 cursor-pointer text-gray-800 hover:bg-blue-50 hover:text-blue-700 transition duration-150 ease-in-out ${isSelected ? 'bg-blue-100 text-blue-800 font-semibold' : ''}`}
+                  className={`flex items-center px-4 py-3 cursor-pointer text-gray-800 group hover:bg-theme-3-100 hover:text-theme-3 transition duration-150 ease-in-out ${isSelected ? 'bg-theme-3-200 text-theme-3 font-semibold' : ''}`}
                   onClick={() => handleSelectOption(option)}
                   role="option"
+                  variants={selectElement}
+                  initial={"rest"}
+                  whileHover={'hover'}
                   aria-selected={!!isSelected}
                 >
-                  {IconComponent && React.createElement(IconComponent, { className: `w-5 h-5 mr-3 ${isSelected ? 'text-blue-600' : 'text-gray-500'}` })}
-                  {!IconComponent && <div className="w-5 h-5 mr-3"></div>} {/* Espacio para opciones sin icono */}
-                  <span>{option.label}</span>
-                  {isSelected && (
-                    <Check className="w-5 h-5 ml-auto text-blue-600" />
+                  {IconComponent && React.createElement(
+                    motion(IconComponent), 
+                    {
+                      variants: selectElementIcon,
+                      className: `w-5 h-5 group-hover:text-theme-3 mr-3 ${isSelected ? 'text-theme-3' : 'text-gray-500'}`
+                    }
                   )}
-                </li>
+                  {!IconComponent && <div className="w-5 h-5 mr-3"></div>} {/* Espacio para opciones sin icono */}
+                  <motion.span variants={selectElementText}>{option.label}</motion.span>
+                  {isSelected && (
+                    <Check className="w-5 h-5 ml-auto text-theme-3" />
+                  )}
+                </motion.li>
               );
             }
           })}

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Eye, EyeOff, User, Lock } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import logo from './assets/logo-group.svg';
+import { toast } from 'react-hot-toast';
 
 import type { Session } from './types';
 // Extend the Window interface to include api
@@ -189,11 +190,13 @@ const LoginForm: React.FC<{ setSession: React.Dispatch<React.SetStateAction<Sess
     // If authenticated is an object with token and user, update session
     if (authenticated && typeof authenticated === 'object' && 'token' in authenticated && 'user' in authenticated && authenticated.success === true) {
       console.log('inicio de sesion exitoso')
+      toast.success('Inicio de sesión exitoso');
       setSession({
         token: authenticated.token,
         user: authenticated.user
       });
     } else {
+      toast.error('Error al iniciar sesión: Credenciales incorrectas');
       console.log("ERROR al iniciar sesion:",authenticated)
     }
   };

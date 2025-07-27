@@ -76,35 +76,166 @@ async function initialization() {
   logToFile('Inicialización completa, creando ventana principal...');
 }
 
+async function deleteUser(event, id_empleado) {
+  try {
+    const result = await Personal.destroy({
+      where: { id_empleado }
+    });
+    if (result) {
+      console.log(`Usuario eliminado exitosamente.`);
+      return { success: true, error: null, message: `Usuario eliminado exitosamente.` };
+    } else {
+      console.log(`No se encontró usuario con ID ${id_empleado}.`);
+      return { success: false, error: null, message: `No se encontró usuario.` };
+    }
+  } catch (error) {
+    console.error(`Error al eliminar usuario con ID ${id_empleado}: ${error.message}`);
+      return { success: false, error, message: `Error al eliminar usuario: ${error.message}` };
+    }
+  }
 
-// --- Carga de variables de entorno con dotenv ---
-// Asegúrate de que esta línea esté al principio de tu main.js
-// Ajusta la ruta según la estructura de tu proyecto empaquetado
-// try {
-//   // Importa dotenv directamente y usa .config()
-//   // La ruta relativa a la raíz del proyecto desde el main.js empaquetado
-//   // suele ser dos niveles arriba si main.js está en 'resources/app.asar/dist' o similar
-//   const dotenvPath = path.resolve(__dirname, '../../.env');
-//   logToFile(`Intentando cargar .env desde: ${dotenvPath}`);
+async function createUser(event,data) {
+  // Agrega el nuevo usuario
+  try {
+    const userSchema = z.object({
+      cedula: z.string().min(1, { message: "La cédula es requerida." }),
+      nombre: z.string().min(1, { message: "El nombre es requerido." }),
+      apellido: z.string().min(1, { message: "El apellido es requerido." }),
+      usuario: z.string().min(3, { message: "El usuario debe tener al menos 3 caracteres." }).max(50, { message: "El usuario no puede exceder los 50 caracteres." }).trim(),
+      clave: z.string().min(6, { message: "La contraseña debe tener al menos 6 caracteres." }).max(100, { message: "La contraseña no puede exceder los 100 caracteres." }),
+      id_grupo: z.number({ invalid_type_error: "El grupo debe ser un número." }),
+      activo: z.boolean()
+    });
+    console.log('Validating user data:', data);
+    const userData = {
+      cedula: data.cedula,
+      nombre: data.nombre,
+      apellido: data.apellido,
+      usuario: data.usuario,
+      clave: data.clave,
+      id_grupo: data.id_grupo,
+      activo: true
+    };
 
-//   // Importa dotenv.config() y úsalo
-//   // Si tienes problemas, puedes probar con 'dotenv/config.js' si tu bundler lo permite
-//   // Pero para control explícito de la ruta, es mejor dotenv.config()
-//   const dotenv = await import('dotenv'); // Importación dinámica para usar await
-//   dotenv.config({ path: dotenvPath });
+    const validationResult = userSchema.safeParse(userData);
+    if (!validationResult.success) {
+      console.error('User validation failed:', validationResult.error);
+      // retorna error en caso de que las credenciales invalidas
+      return { success: false, error: validationResult.error, message: "Datos de usuario inválidos." };
+    }
 
-//   logToFile('dotenv cargado exitosamente.');
-// } catch (error) { // Añadido tipado para TypeScript
-//   logToFile(`Error al cargar dotenv: ${error.message}`);
-// }
+    // Intenta encontrar o crear el usuario
+    const [user, created] = await Personal.findOrCreate({
+      raw: true,
+      where: { usuario: userData.usuario }, // Criterio para buscar si ya existe
+      defaults: userData // Datos a usar si no existe y se crea
+    });
+    
+    if (created) {
+      console.log(`Usuario '${user.usuario}' creado exitosamente.`);
+      return {
+        success: true,
+        error: null,
+        newUser: {
+          ...user.dataValues
+        },
+        message: `Usuario '${user.usuario}' creado exitosamente.`
+      };
+    } else {
+      console.log(`Usuario '${user.usuario}' ya existe.`);
+      return {
+        success: true,
+        error: null,
+        newUser: {},
+        message: `Usuario '${user.usuario}' ya existe.`
+      };
+    }
+  } catch (error) {
+    console.error(`Error al crear o encontrar usuario: ${error.message}`);
+    return {
+      success: true,
+      error: error,
+      newUser: {},
+      message: `Error al crear usuario '${user.usuario}': ${error.message}`
+    };
+  }
+}
 
+async function editUser(event, data) {
+  try {
+    const userSchema = z.object({
+      id_empleado: z.number({ invalid_type_error: "El ID del empleado debe ser un número." }),
+      cedula: z.string().min(1, { message: "La cédula es requerida." }),
+      nombre: z.string().min(1, { message: "El nombre es requerido." }),
+      apellido: z.string().min(1, { message: "El apellido es requerido." }),
+      usuario: z.string().min(3, { message: "El usuario debe tener al menos 3 caracteres." }).max(50, { message: "El usuario no puede exceder los 50 caracteres." }).trim(),
+      clave: z.string().min(0).max(100).optional(), // Puede ser opcional o string vacío
+      id_grupo: z.number({ invalid_type_error: "El grupo debe ser un número." }),
+      activo: z.boolean().optional().default(true) // Por defecto, el usuario está activo
+    });
+
+    console.log('Validating user data for update:', data);
+    
+    const userData = {
+      id_empleado: data.id_empleado,
+      cedula: data.cedula,
+      nombre: data.nombre,
+      apellido: data.apellido,
+      usuario: data.usuario,
+      id_grupo: data.id_grupo,
+      activo: data.activo ? data.activo : true // Si no se especifica, se asume que el usuario está activo
+    };
+
+    // Solo agrega 'clave' si cumple con los requisitos de longitud
+    if (
+      typeof data.clave === 'string' &&
+      data.clave.length >= 6 &&
+      data.clave.length <= 100
+    ) {
+      userData.clave = data.clave;
+    }
+
+    const validationResult = userSchema.safeParse(userData);
+    if (!validationResult.success) {
+      console.error('User validation failed:', validationResult.error);
+      return { success: false, error: validationResult.error, message: "Datos de usuario inválidos." };
+    }
+
+    // Busca el usuario por su identificador único (por ejemplo, id_empleado)
+    const user = await Personal.findByPk(data.id_empleado);
+    if (!user) {
+      return { success: false, error: { general: "Usuario no encontrado." }, message: "Usuario no encontrado." };
+    }
+
+    // Actualiza los campos del usuario
+    await user.update(userData);
+    
+    console.log(`Usuario '${user.usuario}' actualizado exitosamente.`);
+    console.log('Updated user data:', userData);
+    return {
+      success: true,
+      error: null,
+      updatedUser: { ...userData, id_empleado: user.id_empleado },
+      message: `Usuario '${user.usuario}' actualizado exitosamente.`
+    };
+  } catch (error) {
+    console.error(`Error al actualizar usuario: ${error.message}`);
+    return {
+      success: false,
+      error: error,
+      updatedUser: {},
+      message: `Error al actualizar usuario: ${error.message}`
+    };
+  }
+}
 
 /**
  * Maneja la lógica de inicio de sesión, validando credenciales contra la base de datos.
  * @param {Object} event - Objeto de evento IPC (no usado directamente para la lógica de login, pero es parte de la firma IPC).
  * @param {Object} credentials - Objeto que contiene 'username' y 'password' del formulario de login.
  * @returns {Promise<Object>} Un objeto con { success: boolean, error: string | Object | null, user: Object | null }.
- */ 
+ */
+
 async function handleLogin(event, credentials) { 
   const { username, password } = credentials;
   const userDataPath = app.getPath('userData'); // Directorio de datos de la aplicación
@@ -112,15 +243,14 @@ async function handleLogin(event, credentials) {
 
   function logToFile(message) {
     const timestamp = new Date().toISOString();
-    // Solo escribe al archivo si logFilePath ya ha sido inicializado
+
     if (logFilePath) {
       fs.appendFileSync(logFilePath, `[${timestamp}] ${message}\n`);
     } else {
-      // Si se llama antes de la inicialización, imprime en la consola de desarrollo
       console.log(`[${timestamp}] (PRE-INIT LOG) ${message}`);
     }
   }
-  // 1. Validación de datos con Zod
+
   const validationResult = loginSchema.safeParse({ username, password });
   if (!validationResult.success) {
     logToFile('Login failed:', validationResult.error);
@@ -131,7 +261,7 @@ async function handleLogin(event, credentials) {
 
 
   try {
-    // 2. Buscar el usuario en la base de datos por el nombre de usuario
+    // Buscar el usuario en la base de datos por el nombre de usuario
     const user = await Personal.findOne({
       where: {
         usuario: username,
@@ -139,15 +269,13 @@ async function handleLogin(event, credentials) {
       }
     });
 
-    // 3. Si el usuario no existe o no está activo
+    // Si el usuario no existe o no está activo
     if (!user) {
       logToFile('Login failed: no found user');
       return { success: false, error: { general: 'Usuario o contraseña inválidos.' }, user: null };
     }
 
-    // 4. Verificar la contraseña hasheada con Argon2
-    // user.clave es el hash almacenado en la DB
-    // password es la contraseña en texto plano ingresada por el usuario
+    // Verificar la contraseña hasheada con Argon2
     const passwordMatch = await argon2.verify(user.clave, password);
 
     if (passwordMatch) {
@@ -180,10 +308,23 @@ async function handleLogin(event, credentials) {
 }
 async function handleGetGroups(event) {
   try {
-    console.log("ENTRANDO")
-    const groups = await GruposPersonal.findAll({raw:true});
-    console.log('Fetched groups:!!!!!!!!!!!!', groups);
+    const groups = await GruposPersonal.findAll({ raw: true });
+    
     return { success: true, groups };
+  } catch (error) {
+    console.error('Error fetching groups:', error);
+    return { success: false, error: { general: 'Error fetching groups.' } };
+  }
+}
+
+async function handleGetUsers(event) {
+  try {
+    const users = await Personal.findAll({
+      attributes: { exclude: ['clave'] },
+      raw: true
+    });
+
+    return { success: true, users };
   } catch (error) {
     console.error('Error fetching groups:', error);
     return { success: false, error: { general: 'Error fetching groups.' } };
@@ -236,6 +377,10 @@ app.whenReady().then(() => {
     initialization();
     ipcMain.handle('login', handleLogin)
     ipcMain.handle('getGroups', handleGetGroups)
+    ipcMain.handle('createUser', createUser)
+    ipcMain.handle('getUsers', handleGetUsers)
+    ipcMain.handle('editUser', editUser)
+    ipcMain.handle('deleteUser', deleteUser)
   } catch (error) {
     console.error('Error setting up IPC handler:', error);
   }

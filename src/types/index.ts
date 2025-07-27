@@ -11,6 +11,29 @@ export interface Session {
   }
 }
 
+export interface createUserProps {
+  cedula: string;
+  nombre: string;
+  apellido: string;
+  usuario: string;
+  clave: string;
+  id_grupo: number;
+}
+
+export interface editUserProps {
+  id_empleado: number;
+  cedula: string;
+  nombre: string;
+  apellido: string;
+  usuario: string;
+  clave?: string;
+  grupo?: Group;
+  id_grupo: number;
+  activo: boolean;
+}
+
+
+
 export interface Employee {
   id: string;
   name: string;
@@ -57,4 +80,16 @@ export interface Group {
   nombre_grupo: string,
   creado_en: string,
   actualizado_en: string,
+}
+
+export interface User {
+  id_empleado: number;
+  cedula: string;
+  nombre: string;
+  apellido: string;
+  usuario: string;
+  clave?: string;
+  id_grupo: number;
+  grupo?: Group;
+  activo: boolean;
 }

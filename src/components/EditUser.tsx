@@ -1,0 +1,269 @@
+import React, { useState } from 'react';
+import type { Group } from '../types';
+import { motion } from 'framer-motion';
+import { twMerge } from 'tailwind-merge';
+import { User, Eye, EyeOff, Lock, IdCard, CircleUserRound, IdCardLanyard } from 'lucide-react';
+// import scrollText from '../assets/scroll-text.png';
+import { CustomSelectWithIcons } from './CustomSelect';
+import type { OptionType } from './CustomSelect';
+import type { editUserProps } from '../types';
+import toast from 'react-hot-toast';
+
+interface EditUserProps {
+  groups: Group[];
+  onEditUser: (user: editUserProps) => Promise<{ success: boolean; message?: string }>;
+  selectedUser?: editUserProps; // Puedes usar esto para prellenar el formulario si es necesario
+}
+
+const inputs = [
+  {
+    type: 'group',
+    inputs: [
+      {
+        id: 'nombre',
+        label: 'Nombre',
+        type: 'text',
+        placeholder: 'Nombre',
+        icon: User,
+      },
+      {
+        id: 'apellido',
+        label: 'Apellido',
+        type: 'text',
+        placeholder: 'Apellido',
+        icon: IdCardLanyard,
+      }
+    ]
+  },
+  {
+    id: 'usuario',
+    label: 'Usuario',
+    type: 'text',
+    placeholder: 'Usuario',
+    icon: CircleUserRound,
+  },
+  {
+    id: 'cedula',
+    label: 'Cedula',
+    type: 'text',
+    placeholder: 'Cédula',
+    icon: IdCard,
+  },
+  {
+    id: 'clave',
+    label: 'Clave',
+    type: 'password',
+    placeholder: 'Clave',
+    icon: Lock,
+  }
+]
+const icons = {
+  'all': 'ScrollText',
+  'administrativo': 'ShieldUser',
+  'docente': 'GraduationCap',
+  'obrero': 'Hammer',
+}
+
+const EditUser: React.FC<EditUserProps> = ({ groups, onEditUser, selectedUser }) => {
+
+  // Opciones de ejemplo con iconos
+  const options: OptionType[] = [
+    ...groups.map(group => ({
+      id: group.id_grupo,
+      value: group.id_name,
+      label: group.nombre_grupo,
+      icon: icons[group.id_name as keyof typeof icons] ? icons[group.id_name as keyof typeof icons] : undefined, // Asigna el icono si existe
+    })),
+  ];
+
+  const [selectedOption, setSelectedOption] = useState<OptionType | null>(options.find(option => option.id === selectedUser?.grupo?.id_grupo) || null); // Inicializa con la primera opción o null
+
+  // Función para manejar el cambio de opción
+  const handleOptionChange = (option: OptionType) => {
+    setSelectedOption(option);
+    console.log('Opción seleccionada:', option);
+  };
+
+  const [formData, setFormData] = useState({
+    usuario: selectedUser ? selectedUser.usuario : '',
+    nombre: selectedUser ? selectedUser.nombre : '',
+    apellido: selectedUser ? selectedUser.apellido : '',
+    cedula: selectedUser ? selectedUser.cedula : '',
+    clave: '',
+  });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedUser && Number(selectedUser.id_empleado) !== 0) {
+      const response = await onEditUser({
+        id_empleado: selectedUser ? selectedUser.id_empleado : 0, // Asegúrate de que el ID del usuario esté disponible
+        cedula: formData.cedula,
+        nombre: formData.nombre,
+        apellido: formData.apellido,
+        usuario: formData.usuario,
+        clave: formData.clave,
+        id_grupo: selectedOption ? parseInt(selectedOption.id) : 0,
+      });
+
+      if (response.success === true) {
+        setFormData({
+          usuario: '',
+          nombre: '',
+          apellido: '',
+          cedula: '',
+          clave: ''
+        });
+        setSelectedOption(null);
+        setFocusedField(null);
+        setShowPassword(false);
+      }
+      // You can handle post-submit logic here if needed
+      console.log('EditUser response:', response);
+    } else {
+      toast.error('No se pudo editar el usuario. Asegúrate de que el usuario esté seleccionado correctamente.');
+    }
+
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5 }
+    }
+  };
+
+  return (
+    <div>
+      <form onSubmit={handleSubmit}>
+        {/* Sección del Select */}
+        <div className='flex flex-col justify-center'>
+          <CustomSelectWithIcons
+            options={options}
+            selectedOption={selectedOption}
+            onSelect={handleOptionChange}
+            placeholder="Selecciona una opción..."
+          />
+          <motion.div variants={itemVariants} className='flex flex-col gap-y-4'>
+            {inputs.map((input) => {
+              if (input.type === 'group' && Array.isArray(input.inputs)) {
+                return (
+                  <div className='flex gap-x-3'>
+                    {input.inputs.map((subInput) => (
+                      <motion.div key={subInput.id} className={twMerge("relative w-full")} animate={{ scale: focusedField === subInput.id ? 1.02 : 1 }}>
+                        <div
+                          className={`absolute left-4 top-1/2 transform -translate-y-1/2 transition-colors duration-200 ${focusedField === subInput.id ? 'text-theme-3 scale-110' : 'text-slate-400'
+                            }`}
+                        >
+                          {subInput.icon && React.createElement(subInput.icon, { className: 'w-5 h-5' })}
+                        </div>
+                        <input
+                          type={subInput.type}
+                          id={subInput.id}
+                          name={subInput.id}
+                          value={formData[subInput.id as keyof typeof formData]}
+                          onChange={handleInputChange}
+                          onFocus={() => setFocusedField(subInput.id ?? null)}
+                          onBlur={() => setFocusedField(null)}
+                          className={twMerge("w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:outline-none transition-all duration-300 text-slate-800 placeholder:text-slate-400 placeholder:font-regular", focusedField === subInput.id ? 'border-theme-3 bg-white' : '')}
+                          placeholder={subInput.placeholder}
+                          required
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                )
+              } else {
+                if (input.type === 'password') {
+                  return (
+                    <motion.div key={input.id} className={twMerge("relative")} animate={{ scale: focusedField === input.id ? 1.02 : 1 }}>
+                      <div
+                        className={`absolute left-4 top-1/2 transform -translate-y-1/2 transition-colors duration-200 ${focusedField === input.id ? 'text-theme-3 scale-110' : 'text-slate-400'
+                          }`}
+                      >
+                        {input.icon && React.createElement(input.icon, { className: 'w-5 h-5' })}
+                      </div>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        id={input.id}
+                        name={input.id}
+                        value={formData[input.id as keyof typeof formData]}
+                        onChange={handleInputChange}
+                        onFocus={() => setFocusedField(input.id ?? null)}
+                        onBlur={() => setFocusedField(null)}
+                        className={twMerge("w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:outline-none transition-all duration-300 text-slate-800 placeholder-slate-400", focusedField === input.id ? 'border-theme-3 bg-white' : '')}
+                        placeholder={input.placeholder}
+                      />
+                      <motion.button
+                        type="button"
+                        onFocus={() => setFocusedField(input.id ?? null)}
+                        onClick={() => { setShowPassword(!showPassword); setFocusedField(input.id ?? null) }}
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-theme-3 transition-colors duration-200 cursor-pointer"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                      </motion.button>
+                    </motion.div>
+
+                  )
+                } else {
+                  return (
+                    <motion.div key={input.id} className={twMerge("relative")} animate={{ scale: focusedField === input.id ? 1.02 : 1 }}>
+                      <div
+                        className={`absolute left-4 top-1/2 transform -translate-y-1/2 transition-colors duration-200 ${focusedField === input.id ? 'text-theme-3 scale-110' : 'text-slate-400'
+                          }`}
+                      >
+                        {input.icon && React.createElement(input.icon, { className: 'w-5 h-5' })}
+                      </div>
+                      <input
+                        type={input.type}
+                        id={input.id}
+                        name={input.id}
+                        value={formData[input.id as keyof typeof formData]}
+                        onChange={handleInputChange}
+                        onFocus={() => setFocusedField(input.id ?? null)}
+                        onBlur={() => setFocusedField(null)}
+                        className={twMerge("w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:outline-none transition-all duration-300 text-slate-800 placeholder-slate-400", focusedField === input.id ? 'border-theme-3 bg-white' : '')}
+                        placeholder={input.placeholder}
+                        required
+                      />
+                    </motion.div>
+                  )
+                }
+
+              }
+
+            })}
+          </motion.div>
+          <p className={twMerge("my-4 text-sm text-gray-600", !selectedOption && 'opacity-0')}>
+            El grupo seleccionado es: <span className="font-semibold text-blue-700">{selectedOption && selectedOption.value}</span>
+          </p>
+        </div>
+
+        {/* Botón de Envío */}
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          type="submit"
+          className="w-full bg-theme-3 text-white font-bold py-3 px-4 rounded-md shadow-lg hover:bg-theme-3 focus:outline-none focus:ring-2 focus:ring-theme-3 focus:ring-opacity-75 transition-colors duration-200 transform cursor-pointer"
+        >
+          Actualizar Usuario
+        </motion.button>
+      </form>
+    </div>
+  );
+};
+
+export { EditUser };

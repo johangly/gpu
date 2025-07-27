@@ -6,7 +6,7 @@ import { useState, useMemo } from 'react';
 import type { Session, MenuItem } from './types'; // Asegúrate de que MenuItem esté definido en types.ts
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-
+import { Toaster } from 'react-hot-toast';
 import {
   BarChart3,
   PieChart,
@@ -89,7 +89,7 @@ function App() {
                   {/* La ruta raíz '/' se renderizará cuando la URL sea http://localhost:5173/#/ */}
                   <Route path="/" element={<Overview />} />
                   <Route path="/reports" element={<Reports />} />
-                  <Route path="/employees" element={<Employees />} />
+                  <Route path="/employees" element={<Employees session={session} />} />
                   {/* <Route path="/settings" element={<Settings />} /> */}
                   {/* Redirecciona cualquier ruta no encontrada a la vista general */}
                   <Route path="*" element={<Navigate to="/" replace />} />
@@ -103,6 +103,7 @@ function App() {
           <LoginForm setSession={setSession} />
         </Container>
       )}
+      <Toaster position='bottom-right'/>
     </Router>
   );
 }

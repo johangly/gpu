@@ -32,7 +32,7 @@ const GroupFilter: React.FC<GroupFilterProps> = ({ groups,selectedGroup, onGroup
               onClick={() => onGroupChange(group.id_name)}
               className={`px-4 py-2 rounded-lg transition-all duration-200 ${
                 selectedGroup === group.id_name
-                  ? 'bg-purple-600 text-white shadow-lg'
+                  ? 'bg-theme-3-900 text-white shadow-lg'
                   : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 hover:border-gray-400'
               }`}
             >
