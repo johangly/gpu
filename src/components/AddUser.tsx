@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import type { Group } from '../types';
+import type { SessionGroup } from '../types';
 import { motion } from 'framer-motion';
 import { twMerge } from 'tailwind-merge';
-import { User, Eye, EyeOff, Lock, IdCard, CircleUserRound, IdCardLanyard } from 'lucide-react';
+import { User as UserIcon, Eye, EyeOff, Lock, IdCard, CircleUserRound, IdCardLanyard } from 'lucide-react';
 // import scrollText from '../assets/scroll-text.png';
 import { CustomSelectWithIcons } from './CustomSelect';
 import type { OptionType } from './CustomSelect';
 import type { createUserProps } from '../types';
+
 interface AddUserProps {
-  groups: Group[];
+  groups: SessionGroup[];
   onAddUser: (user: createUserProps) => Promise<{ success: boolean; message?: string }>;
 }
 
@@ -21,7 +22,7 @@ const inputs = [
         label: 'Nombre',
         type: 'text',
         placeholder: 'Nombre',
-        icon: User,
+        icon: UserIcon,
       },
       {
         id: 'apellido',
@@ -55,10 +56,10 @@ const inputs = [
   }
 ]
 const icons = {
-  'all': 'ScrollText',
-  'administrativo': 'ShieldUser',
-  'docente': 'GraduationCap',
-  'obrero': 'Hammer',
+  0: 'ScrollText',
+  1: 'ShieldUser',
+  2: 'GraduationCap',
+  3: 'Hammer',
 }
 
 const AddUser: React.FC<AddUserProps> = ({ groups, onAddUser }) => {
@@ -67,9 +68,9 @@ const AddUser: React.FC<AddUserProps> = ({ groups, onAddUser }) => {
   const options: OptionType[] = [
     ...groups.map(group => ({
       id: group.id_grupo,
-      value: group.id_name,
+      value: group.id_grupo,
       label: group.nombre_grupo,
-      icon: icons[group.id_name as keyof typeof icons] ? icons[group.id_name as keyof typeof icons] : undefined, // Asigna el icono si existe
+      icon: icons[group.id_grupo as keyof typeof icons] ? icons[group.id_grupo as keyof typeof icons] : undefined, // Asigna el icono si existe
     })),
   ];
 
@@ -107,8 +108,11 @@ const AddUser: React.FC<AddUserProps> = ({ groups, onAddUser }) => {
       nombre: formData.nombre,
       apellido: formData.apellido,
       usuario: formData.usuario,
-      clave: formData.clave,
-      id_grupo: selectedOption ? parseInt(selectedOption.id) : 0,
+      clave: formData.clave ? formData.clave : '',
+      grupo: {
+        id_grupo: selectedOption ? selectedOption.id : 0,
+        nombre_grupo: selectedOption ? selectedOption.label : '',
+      },
     });
 
     if (response.success === true) {
@@ -241,7 +245,7 @@ const AddUser: React.FC<AddUserProps> = ({ groups, onAddUser }) => {
             })}
           </motion.div>
           <p className={twMerge("my-4 text-sm text-gray-600", !selectedOption && 'opacity-0')}>
-            Has seleccionado: <span className="font-semibold text-blue-700">{selectedOption && selectedOption.value}</span>
+            Has seleccionado: <span className="font-semibold text-blue-700">{selectedOption && selectedOption.label}</span>
             </p>
         </div>
 

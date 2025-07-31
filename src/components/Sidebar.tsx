@@ -5,7 +5,8 @@ import { ChevronLeft } from 'lucide-react';
 import type { SidebarProps } from '../types';
 import logo from '../assets/logo-group.svg'
 
-const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, menuItems }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, menuItems, user }) => {
+
   return (
     <motion.aside
       initial={false}
@@ -158,8 +159,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, menuItems }) =
                 <span className="text-white font-semibold text-sm">AD</span>
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">Admin</p>
-                <p className="text-xs text-gray-500">Administrador</p>
+                <p className="text-sm font-medium text-gray-900">{user.nombre}</p>
+                <p className="text-xs text-gray-500">{user.grupo?.nombre_grupo ? user.grupo?.nombre_grupo : ''}</p>
               </div>
             </motion.div>
           ) : (
@@ -169,7 +170,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, menuItems }) =
               className="flex justify-center"
             >
               <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-sm">AD</span>
+                  <span className="text-white font-semibold text-sm">{user.nombre[0] + user.nombre[1]}</span>
               </div>
             </motion.div>
           )}

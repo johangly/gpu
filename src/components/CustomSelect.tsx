@@ -15,8 +15,8 @@ interface CustomSelectWithIconsProps {
 }
 
 interface OptionType {
-  id: string;
-  value: string;
+  id: number;
+  value: number;
   label: string;
   icon?: string; // 'icon' es opcional, puede ser una cadena que representa el nombre del icono
 }
@@ -25,7 +25,6 @@ interface OptionType {
 function CustomSelectWithIcons({ options, selectedOption, onSelect, placeholder = "Selecciona..." }: CustomSelectWithIconsProps) {
   const [isOpen, setIsOpen] = useState(false); // Estado para controlar si el desplegable está abierto
   const selectRef = useRef<HTMLDivElement>(null); // Referencia para detectar clics fuera del componente
-  console.log('CustomSelectWithIcons options:', options);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   
   // Efecto para cerrar el desplegable cuando se hace clic fuera
@@ -114,7 +113,7 @@ function CustomSelectWithIcons({ options, selectedOption, onSelect, placeholder 
           {options.map((option) => {
             const IconComponent = option.icon ? IconMap[option.icon] : null; // IconComponent puede ser null
             const isSelected = selectedOption && selectedOption.value === option.value;
-            if (option.value !== "all") {
+            if (option.value !== 0) {
               return (
                 <motion.li
                   key={option.value}

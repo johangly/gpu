@@ -1,14 +1,20 @@
+export interface User {
+  id_empleado: number;
+  cedula: string;
+  nombre: string;
+  apellido: string;
+  usuario: string;
+  grupo: SessionGroup;
+  activo: boolean;
+}
 export interface Session {
   token: string;
-  user: {
-    id_empleado: number;
-    cedula: string;
-    nombre: string;
-    apellido: string;
-    usuario: string;
-    id_grupo: number;
-    activo: boolean;
-  }
+  user: User
+}
+
+export interface SessionGroup {
+  id_grupo: number;
+  nombre_grupo: string;
 }
 
 export interface createUserProps {
@@ -16,23 +22,14 @@ export interface createUserProps {
   nombre: string;
   apellido: string;
   usuario: string;
-  clave: string;
-  id_grupo: number;
+  clave: string | '';
+  grupo: SessionGroup;
 }
+export type SelectedUserType = editUserProps;
 
-export interface editUserProps {
-  id_empleado: number;
-  cedula: string;
-  nombre: string;
-  apellido: string;
-  usuario: string;
-  clave?: string;
-  grupo?: Group;
-  id_grupo: number;
-  activo: boolean;
-}
-
-
+export type editUserProps = User & {
+  clave?: string; // La propiedad 'clave' es opcional
+};
 
 export interface Employee {
   id: string;
@@ -72,6 +69,7 @@ export interface SidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
   menuItems: MenuItem[];
+  user: User;
 }
 
 export interface Group {
@@ -82,14 +80,18 @@ export interface Group {
   actualizado_en: string,
 }
 
-export interface User {
+
+
+export interface IpcResponse<T = undefined> {
+  success: boolean;
+  message?: string;
+  error?: string;
+  data?: T;
+}
+
+export interface AttendanceRecord {
+  id_registro: number;
   id_empleado: number;
-  cedula: string;
-  nombre: string;
-  apellido: string;
-  usuario: string;
-  clave?: string;
-  id_grupo: number;
-  grupo?: Group;
-  activo: boolean;
+  tipo_accion: 'entrada' | 'salida';
+  fecha_hora: string; // Considera usar `Date` si vas a manipularla como objeto Date
 }

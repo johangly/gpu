@@ -1,11 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Filter } from 'lucide-react';
-import type { Group } from '../types';  
+import type { SessionGroup } from '../types';  
 interface GroupFilterProps {
-  selectedGroup: string;
-  onGroupChange: (group: string) => void;
-  groups: Group[];
+  selectedGroup: number;
+  onGroupChange: (group: number) => void;
+  groups: SessionGroup[];
 }
 
 const GroupFilter: React.FC<GroupFilterProps> = ({ groups,selectedGroup, onGroupChange }) => {
@@ -29,9 +29,9 @@ const GroupFilter: React.FC<GroupFilterProps> = ({ groups,selectedGroup, onGroup
               transition={{ delay: 0.4 + index * 0.1 }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => onGroupChange(group.id_name)}
+              onClick={() => onGroupChange(group.id_grupo)}
               className={`px-4 py-2 rounded-lg transition-all duration-200 ${
-                selectedGroup === group.id_name
+                selectedGroup === group.id_grupo
                   ? 'bg-theme-3-900 text-white shadow-lg'
                   : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 hover:border-gray-400'
               }`}

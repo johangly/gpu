@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import type { Group } from '../types';
+import type { SessionGroup, User, SelectedUserType } from '../types';
 import { motion } from 'framer-motion';
 import { twMerge } from 'tailwind-merge';
-import { User, Eye, EyeOff, Lock, IdCard, CircleUserRound, IdCardLanyard } from 'lucide-react';
+import { User as UserIcon, Eye, EyeOff, Lock, IdCard, CircleUserRound, IdCardLanyard } from 'lucide-react';
 // import scrollText from '../assets/scroll-text.png';
 import { CustomSelectWithIcons } from './CustomSelect';
 import type { OptionType } from './CustomSelect';
@@ -10,9 +10,9 @@ import type { editUserProps } from '../types';
 import toast from 'react-hot-toast';
 
 interface EditUserProps {
-  groups: Group[];
+  groups: SessionGroup[];
   onEditUser: (user: editUserProps) => Promise<{ success: boolean; message?: string }>;
-  selectedUser?: editUserProps; // Puedes usar esto para prellenar el formulario si es necesario
+  selectedUser: SelectedUserType;
 }
 
 const inputs = [
@@ -24,7 +24,7 @@ const inputs = [
         label: 'Nombre',
         type: 'text',
         placeholder: 'Nombre',
-        icon: User,
+        icon: UserIcon,
       },
       {
         id: 'apellido',
@@ -57,11 +57,12 @@ const inputs = [
     icon: Lock,
   }
 ]
+
 const icons = {
-  'all': 'ScrollText',
-  'administrativo': 'ShieldUser',
-  'docente': 'GraduationCap',
-  'obrero': 'Hammer',
+  0: 'ScrollText',
+  1: 'ShieldUser',
+  2: 'GraduationCap',
+  3: 'Hammer',
 }
 
 const EditUser: React.FC<EditUserProps> = ({ groups, onEditUser, selectedUser }) => {
@@ -70,30 +71,36 @@ const EditUser: React.FC<EditUserProps> = ({ groups, onEditUser, selectedUser })
   const options: OptionType[] = [
     ...groups.map(group => ({
       id: group.id_grupo,
-      value: group.id_name,
+      value: group.id_grupo,
       label: group.nombre_grupo,
-      icon: icons[group.id_name as keyof typeof icons] ? icons[group.id_name as keyof typeof icons] : undefined, // Asigna el icono si existe
+      icon: icons[group.id_grupo as keyof typeof icons] ? icons[group.id_grupo as keyof typeof icons] : undefined, // Asigna el icono si existe
     })),
   ];
 
-  const [selectedOption, setSelectedOption] = useState<OptionType | null>(options.find(option => option.id === selectedUser?.grupo?.id_grupo) || null); // Inicializa con la primera opción o null
+  const [selectedOption, setSelectedOption] = useState<OptionType | null>(options.find(option => option.id === selectedUser.grupo.id_grupo) || null); // Inicializa con la primera opción o null
+
+  const [formData, setFormData] = useState<User & { clave?: string | '' }>({
+    id_empleado: selectedUser ? selectedUser.id_empleado : 0,
+    cedula: selectedUser ? selectedUser.cedula : '',
+    nombre: selectedUser ? selectedUser.nombre : '',
+    apellido: selectedUser ? selectedUser.apellido : '',
+    usuario: selectedUser ? selectedUser.usuario : '',
+    clave: '',
+    activo: selectedUser ? selectedUser.activo : true,
+    grupo: {
+      id_grupo: selectedOption ? selectedOption.id : 0,
+      nombre_grupo: selectedOption ? selectedOption.label : '',
+    }
+  });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   // Función para manejar el cambio de opción
   const handleOptionChange = (option: OptionType) => {
     setSelectedOption(option);
     console.log('Opción seleccionada:', option);
   };
-
-  const [formData, setFormData] = useState({
-    usuario: selectedUser ? selectedUser.usuario : '',
-    nombre: selectedUser ? selectedUser.nombre : '',
-    apellido: selectedUser ? selectedUser.apellido : '',
-    cedula: selectedUser ? selectedUser.cedula : '',
-    clave: '',
-  });
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -107,22 +114,32 @@ const EditUser: React.FC<EditUserProps> = ({ groups, onEditUser, selectedUser })
     e.preventDefault();
     if (selectedUser && Number(selectedUser.id_empleado) !== 0) {
       const response = await onEditUser({
-        id_empleado: selectedUser ? selectedUser.id_empleado : 0, // Asegúrate de que el ID del usuario esté disponible
+        id_empleado: selectedUser ? selectedUser.id_empleado : 0,
         cedula: formData.cedula,
         nombre: formData.nombre,
         apellido: formData.apellido,
         usuario: formData.usuario,
         clave: formData.clave,
-        id_grupo: selectedOption ? parseInt(selectedOption.id) : 0,
+        activo: formData.activo,
+        grupo: {
+          id_grupo: selectedOption ? selectedOption.id : 0,
+          nombre_grupo: selectedOption ? selectedOption.label : '',
+        },
       });
 
       if (response.success === true) {
         setFormData({
-          usuario: '',
+          id_empleado: 0,
+          cedula: '',
           nombre: '',
           apellido: '',
-          cedula: '',
-          clave: ''
+          usuario: '',
+          clave: '',
+          activo: true,
+          grupo: {
+            id_grupo: 0,
+            nombre_grupo: '',
+          }
         });
         setSelectedOption(null);
         setFocusedField(null);
@@ -144,7 +161,9 @@ const EditUser: React.FC<EditUserProps> = ({ groups, onEditUser, selectedUser })
       transition: { duration: 0.5 }
     }
   };
-
+  console.log('EditUser formData:', formData);
+  console.log('EditUser selectedOption:', selectedOption);
+  console.log('EditUser inputs:', inputs);
   return (
     <div>
       <form onSubmit={handleSubmit}>

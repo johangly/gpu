@@ -10,68 +10,56 @@ import { AddUser } from '../components/AddUser';
 import { EditUser } from '../components/EditUser';
 import { fetchGroups } from '../utils/getGroups';
 import { fetchUsers} from '../utils/getUsers';
-import type { Group, User, createUserProps, editUserProps } from '../types';
+import type { SessionGroup, User, createUserProps, editUserProps, SelectedUserType } from '../types';
 import { toast } from 'react-hot-toast';
 import type { Session } from '../types';
 import { twMerge } from 'tailwind-merge';
 
 const Employees: React.FC<{ session: Session }> = ({ session }) => {
-  const [selectedGroup, setSelectedGroup] = useState('all');
+  const [selectedGroup, setSelectedGroup] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   // const { employees } = useAttendanceData();
-  const [groups, setGroups] = useState<Group[]>([]);
+  const [groups, setGroups] = useState<SessionGroup[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loadingData, setLoadingData] = useState<boolean>(false);
-  const [selectedUser, setSelectedUser] = useState<editUserProps>({
+  const [selectedUser, setSelectedUser] = useState<SelectedUserType>({
     id_empleado: 0,
     cedula: '',
     nombre: '',
     apellido: '',
     usuario: '',
     clave: '',
-    id_grupo: 0,
     activo:true,
+    grupo: {
+      id_grupo: 0,
+      nombre_grupo: ''
+    }
   });
 
-  function matchUserGroup(user: User, groups: Group[]) {
-    const newUser = {
-      ...user,
-      'grupo': groups.find((group) => {
-        if (
-          group.id_grupo !== 'all' &&
-          parseInt(group.id_grupo) ===
-          (typeof user.id_grupo === 'string' ? parseInt(user.id_grupo) : user.id_grupo)
-        ) {
-          return group;
-        }
-      })
-    }
-    return newUser;
-  }
 
-  function mapUsersWithGroups(users: User[], groups: Group[]) {
-    const newUsers = users.map((user) => {
-      const group = groups.find((group) => {
-        if (
-          group.id_grupo !== 'all' &&
-          parseInt(group.id_grupo) ===
-          (typeof user.id_grupo === 'string' ? parseInt(user.id_grupo) : user.id_grupo)
-        ) {
-          return group;
-        }
-      });
+  // function mapUsersWithGroups(users: User[], groups: Group[]) {
+  //   const newUsers = users.map((user) => {
+  //     const group = groups.find((group) => {
+  //       if (
+  //         group.id_grupo !== 'all' &&
+  //         parseInt(group.id_grupo) ===
+  //         (typeof user.id_grupo === 'string' ? parseInt(user.id_grupo) : user.id_grupo)
+  //       ) {
+  //         return group;
+  //       }
+  //     });
 
-      // excluir al usuario de la session
-      if (user.usuario !== session.user.usuario) {
-        return {
-          ...user,
-          grupo: group,
-        };
-      }
-    });
+  //     // excluir al usuario de la session
+  //     if (user.usuario !== session.user.usuario) {
+  //       return {
+  //         ...user,
+  //         grupo: group,
+  //       };
+  //     }
+  //   });
 
-    setUsers(newUsers.filter(u => u !== undefined) as User[]);
-  }
+  //   setUsers(newUsers.filter(u => u !== undefined) as User[]);
+  // }
   const fetchInitialData = async () => {
     setLoadingData(true);
     try {
@@ -80,8 +68,11 @@ const Employees: React.FC<{ session: Session }> = ({ session }) => {
         fetchGroups() // Assuming this IPC handler exists and returns { success: boolean, groups: GroupType[] }
       ]);
 
-      if (usersResponse.success && usersResponse.users && groupsResponse) {
-        mapUsersWithGroups(usersResponse.users, groupsResponse);
+      if (usersResponse.success && usersResponse.users) {
+        console.log('user response', usersResponse)
+        console.log('group response', groupsResponse)
+        setUsers(usersResponse.users);
+        // mapUsersWithGroups(usersResponse.users, groupsResponse);
       } else {
         toast.error('Error al cargar usuarios iniciales.');
         console.error('Error loading users:', usersResponse.error);
@@ -103,9 +94,9 @@ const Employees: React.FC<{ session: Session }> = ({ session }) => {
   useEffect(() => {
     fetchInitialData();
   }, []);
-
+  console.log('USUARIOS ||||||||||||||||||||',users)
   const filteredEmployees = users.filter(user => {
-    const matchesGroup = selectedGroup === 'all' || user.grupo?.id_name.toLowerCase() === selectedGroup;
+    const matchesGroup = selectedGroup === 0 || user.grupo?.id_grupo === selectedGroup;
     const matchesSearch = user.nombre.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesGroup && matchesSearch;
   });
@@ -167,7 +158,10 @@ const Employees: React.FC<{ session: Session }> = ({ session }) => {
         apellido: '',
         usuario: '',
         clave: '',
-        id_grupo: 0,
+        grupo: {
+          id_grupo: 0,
+          nombre_grupo: ''
+        },
         activo:true,
       }); // Resetea el estado del usuario seleccionado
       setIsModalOpen(false); // Cierra el modal después de eliminar
@@ -229,11 +223,10 @@ const Employees: React.FC<{ session: Session }> = ({ session }) => {
 
       const result = await creatingUser;
       const newUpdatedUser = result.newUser;
-      if (newUpdatedUser !== null && newUpdatedUser !== undefined) {
-        const newUser = matchUserGroup(newUpdatedUser, groups);
-        setUsers((prevUsers) => [...prevUsers,newUser]);
-      } else { 
-        toast.error('Error al crear el usuario. Por favor, intenta nuevamente.');
+      console.log('result', result);
+      if (newUpdatedUser !== null && newUpdatedUser !== undefined && newUpdatedUser) {
+        // const newUser = matchUserGroup(newUpdatedUser, groups);
+        setUsers((prevUsers) => [...prevUsers, newUpdatedUser]);
       }
 
       return creatingUser;
@@ -242,7 +235,7 @@ const Employees: React.FC<{ session: Session }> = ({ session }) => {
     }
   }
 
-  async function editeUser(user: editUserProps): Promise<{ success: boolean; message?: string }> {
+  async function editUser(user: editUserProps): Promise<{ success: boolean; message?: string }> {
 
     const editingUser = new Promise<{ message: string, success: boolean, updatedUser?: User | null }>((resolve, reject) => {
       window.api.editUser(user)
@@ -296,12 +289,12 @@ const Employees: React.FC<{ session: Session }> = ({ session }) => {
 
       const result = await editingUser;
       const newUpdatedUser = result.updatedUser;
-      console.log(result, newUpdatedUser,'respuestaaa');
+      console.log(result, newUpdatedUser, 'respuestaaa');
+      // busca el usuario y lo actualiza
       if (newUpdatedUser !== null && newUpdatedUser !== undefined) {
-        const newUser = matchUserGroup(newUpdatedUser, groups);
         setUsers((prevUsers) => {
           const updatedUsers = prevUsers.map((u) =>
-            u.id_empleado === newUser.id_empleado ? newUser : u
+            u.id_empleado === newUpdatedUser.id_empleado ? newUpdatedUser : u
           );
           return updatedUsers;
         });
@@ -314,8 +307,11 @@ const Employees: React.FC<{ session: Session }> = ({ session }) => {
         apellido: '',
         usuario: '',
         clave: '',
-        id_grupo: 0,
         activo: true,
+        grupo: {
+          id_grupo: 0,
+          nombre_grupo: ''
+        }
       }); // Resetea el estado del usuario seleccionado
 
       setIsModalOpen(false); // Cierra el modal después de editar
@@ -432,7 +428,7 @@ const Employees: React.FC<{ session: Session }> = ({ session }) => {
                     <p className="text-gray-700 mb-6 leading-relaxed">
                       Aqui podras editar los datos del usuario seleccionado.
                     </p>
-                    <EditUser groups={groups} onEditUser={editeUser} selectedUser={selectedUser} />
+                    <EditUser groups={groups} onEditUser={editUser} selectedUser={selectedUser} />
                   </>
                 )}
 
@@ -501,10 +497,11 @@ const Employees: React.FC<{ session: Session }> = ({ session }) => {
 
       {/* Employee Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredEmployees.map((user, index) => {
+        {filteredEmployees.map((user: User, index) => {
           const StatusIcon = getStatusIcon('Presente');
           return (
             <motion.div
+              key={index}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
