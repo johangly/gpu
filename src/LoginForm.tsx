@@ -188,7 +188,7 @@ const LoginForm: React.FC<{ setSession: React.Dispatch<React.SetStateAction<Sess
     const authenticated = await window.api.login({username: formData.username, password: formData.password});
 
     // If authenticated is an object with token and user, update session
-    if (authenticated && typeof authenticated === 'object' && 'token' in authenticated && 'user' in authenticated && authenticated.success === true) {
+    if (authenticated && typeof authenticated === 'object' && 'token' in authenticated && 'user' in authenticated && authenticated.success === true && authenticated.user !== null) {
       console.log('inicio de sesion exitoso')
       toast.success('Inicio de sesión exitoso');
       setSession({

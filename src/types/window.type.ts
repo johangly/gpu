@@ -15,15 +15,7 @@ export interface Api {
       error: string | null;
       success: boolean;
       token: string;
-      user: {
-        id_empleado: number;
-        cedula: string;
-        nombre: string;
-        apellido: string;
-        usuario: string;
-        id_grupo: number;
-        activo: boolean;
-      }
+      user: User | null;
     }>;
   getGroups: () => {
     success: boolean;

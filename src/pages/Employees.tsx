@@ -12,16 +12,14 @@ import { fetchGroups } from '../utils/getGroups';
 import { fetchUsers} from '../utils/getUsers';
 import type { SessionGroup, User, createUserProps, editUserProps, SelectedUserType } from '../types';
 import { toast } from 'react-hot-toast';
-import type { Session } from '../types';
 import { twMerge } from 'tailwind-merge';
 
-const Employees: React.FC<{ session: Session }> = ({ session }) => {
+const Employees = () => {
   const [selectedGroup, setSelectedGroup] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   // const { employees } = useAttendanceData();
   const [groups, setGroups] = useState<SessionGroup[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [loadingData, setLoadingData] = useState<boolean>(false);
   const [selectedUser, setSelectedUser] = useState<SelectedUserType>({
     id_empleado: 0,
     cedula: '',
@@ -36,32 +34,7 @@ const Employees: React.FC<{ session: Session }> = ({ session }) => {
     }
   });
 
-
-  // function mapUsersWithGroups(users: User[], groups: Group[]) {
-  //   const newUsers = users.map((user) => {
-  //     const group = groups.find((group) => {
-  //       if (
-  //         group.id_grupo !== 'all' &&
-  //         parseInt(group.id_grupo) ===
-  //         (typeof user.id_grupo === 'string' ? parseInt(user.id_grupo) : user.id_grupo)
-  //       ) {
-  //         return group;
-  //       }
-  //     });
-
-  //     // excluir al usuario de la session
-  //     if (user.usuario !== session.user.usuario) {
-  //       return {
-  //         ...user,
-  //         grupo: group,
-  //       };
-  //     }
-  //   });
-
-  //   setUsers(newUsers.filter(u => u !== undefined) as User[]);
-  // }
   const fetchInitialData = async () => {
-    setLoadingData(true);
     try {
       const [usersResponse, groupsResponse] = await Promise.all([
         fetchUsers(), // Assuming this IPC handler exists and returns { success: boolean, users: UserType[] }
@@ -87,8 +60,6 @@ const Employees: React.FC<{ session: Session }> = ({ session }) => {
     } catch (error) {
       toast.error('Error de conexión al cargar datos iniciales.');
       console.error('Initial data fetch error:', error);
-    } finally {
-      setLoadingData(false);
     }
   };
   useEffect(() => {

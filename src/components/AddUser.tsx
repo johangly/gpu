@@ -7,7 +7,8 @@ import { User as UserIcon, Eye, EyeOff, Lock, IdCard, CircleUserRound, IdCardLan
 import { CustomSelectWithIcons } from './CustomSelect';
 import type { OptionType } from './CustomSelect';
 import type { createUserProps } from '../types';
-
+import validarCedula from '../utils/validarCedula';
+import toast from 'react-hot-toast';
 interface AddUserProps {
   groups: SessionGroup[];
   onAddUser: (user: createUserProps) => Promise<{ success: boolean; message?: string }>;
@@ -103,6 +104,12 @@ const AddUser: React.FC<AddUserProps> = ({ groups, onAddUser }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validarCedula(formData.cedula)) {
+      toast.error('Cédula inválida. Debe comenzar con "V" o "E" y tener entre 7 y 9 dígitos.');
+      return;
+    }
+
     const response = await onAddUser({
       cedula: formData.cedula,
       nombre: formData.nombre,
@@ -127,8 +134,6 @@ const AddUser: React.FC<AddUserProps> = ({ groups, onAddUser }) => {
       setFocusedField(null);
       setShowPassword(false);
     }
-    // You can handle post-submit logic here if needed
-    console.log('AddUser response:', response);
   };
 
   const itemVariants = {

@@ -8,14 +8,14 @@ import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
 import {
-  BarChart3,
+  // BarChart3,
   PieChart,
   Users,
 } from 'lucide-react';
 
 import Sidebar from './components/Sidebar';
-import Overview from './pages/Overview';
-import Reports from './pages/Reports';
+// import Overview from './pages/Overview';
+// import Reports from './pages/Reports';
 import Employees from './pages/Employees';
 import MarkAttendance from './components/markAttendance';
 // import Settings from './pages/Settings'; // Descomenta si usas la página de Settings
@@ -51,18 +51,18 @@ function App() {
     if (userGroupId === 1) { // Administrativo
       return [
         ...baseItems,
-        {
-          id: 'overview',
-          label: 'Vista General',
-          icon: BarChart3,
-          path: '/', // Ruta base
-        },
-        {
-          id: 'reports',
-          label: 'Reportes',
-          icon: PieChart,
-          path: '/reports',
-        },
+        // {
+        //   id: 'overview',
+        //   label: 'Vista General',
+        //   icon: BarChart3,
+        //   path: '/', // Ruta base
+        // },
+        // {
+        //   id: 'reports',
+        //   label: 'Reportes',
+        //   icon: PieChart,
+        //   path: '/reports',
+        // },
         {
           id: 'employees',
           label: 'Personal',
@@ -124,9 +124,9 @@ function App() {
                     </>
                     : <>
                         {/* La ruta raíz '/' se renderizará cuando la URL sea http://localhost:5173/#/ */}
-                        <Route path="/" element={<Overview />} />
-                        <Route path="/reports" element={<Reports />} />
-                        <Route path="/employees" element={<Employees session={session} />} />
+                        {/* <Route path="/" element={<Overview />} /> */}
+                        {/* <Route path="/reports" element={<Reports />} /> */}
+                        <Route path="/employees" element={<Employees/>} />
                         {/* <Route path="/settings" element={<Settings />} /> */}
                         {/* Redirecciona cualquier ruta no encontrada a la vista general */}
                         <Route path="*" element={<Navigate to="/" replace />} />

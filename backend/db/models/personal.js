@@ -14,6 +14,12 @@ export default (sequelize, DataTypes) => {
       allowNull: false,
       unique: true,
       comment: 'Número de cédula del empleado (identificador único)',
+      validate: {
+        is: {
+          args: /^[VE]\d{7,9}$/, // Expresión regular: debe empezar con V o E, seguido de 7 a 9 dígitos
+          msg: 'La cédula debe empezar con V o E, seguido de 7 a 9 dígitos.', // Mensaje de error personalizado
+        },
+      },
     },
     nombre: {
       type: DataTypes.STRING(100),
