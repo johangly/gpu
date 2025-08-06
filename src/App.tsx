@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 import Sidebar from './components/Sidebar';
+import Asistencias from './pages/Asistence'; // Asegúrate de que la ruta sea correcta
 // import Overview from './pages/Overview';
 // import Reports from './pages/Reports';
 import Employees from './pages/Employees';
@@ -68,7 +69,14 @@ function App() {
           label: 'Personal',
           icon: Users,
           path: '/employees',
-          badge: 3 // Ejemplo de badge para notificaciones
+          badge: 0// Ejemplo de badge para notificaciones
+        },
+        {
+          id: 'asistencias',
+          label: 'Asistencias',
+          icon: PieChart,
+          path: '/asistencias',
+          badge: 0// Ejemplo de badge para notificaciones
         },
         // {
         //   id: 'settings',
@@ -113,7 +121,7 @@ function App() {
           />
           <main className="flex-1 overflow-auto">
             <div className="p-8">
-              <h1 className="text-3xl font-bold mb-6">Bienvenido {session.user.nombre}</h1>
+              {/* <h1 className="text-3xl font-bold mb-6">Bienvenido {session.user.nombre}</h1> */}
               <AnimatePresence mode="wait">
                 <Routes>
                   {session.user.grupo.id_grupo !== 1
@@ -126,7 +134,8 @@ function App() {
                         {/* La ruta raíz '/' se renderizará cuando la URL sea http://localhost:5173/#/ */}
                         {/* <Route path="/" element={<Overview />} /> */}
                         {/* <Route path="/reports" element={<Reports />} /> */}
-                        <Route path="/employees" element={<Employees/>} />
+                      <Route path="/employees" element={<Employees />} />
+                      <Route path="/asistencias" element={<Asistencias />} />
                         {/* <Route path="/settings" element={<Settings />} /> */}
                         {/* Redirecciona cualquier ruta no encontrada a la vista general */}
                         <Route path="*" element={<Navigate to="/" replace />} />

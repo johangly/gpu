@@ -12,5 +12,5 @@ contextBridge.exposeInMainWorld('api', {
   markAttendance: (data) => ipcRenderer.invoke('markAttendance', data),
   getLastUserActivity: (id_empleado) => ipcRenderer.invoke('getLastUserActivity', id_empleado),
   getLast10UserActivities: (id_empleado) => ipcRenderer.invoke('getLast10UserActivities', id_empleado),
-  getAllUserActivities: (id_empleado) => ipcRenderer.invoke('getAllUserActivities', id_empleado),
+  getAllUserActivities: () => ipcRenderer.invoke('getAllUserActivities'),
 })

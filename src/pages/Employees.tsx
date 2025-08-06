@@ -37,22 +37,19 @@ const Employees = () => {
   const fetchInitialData = async () => {
     try {
       const [usersResponse, groupsResponse] = await Promise.all([
-        fetchUsers(), // Assuming this IPC handler exists and returns { success: boolean, users: UserType[] }
-        fetchGroups() // Assuming this IPC handler exists and returns { success: boolean, groups: GroupType[] }
+        fetchUsers(),
+        fetchGroups()
       ]);
 
       if (usersResponse.success && usersResponse.users) {
-        console.log('user response', usersResponse)
-        console.log('group response', groupsResponse)
         setUsers(usersResponse.users);
-        // mapUsersWithGroups(usersResponse.users, groupsResponse);
       } else {
         toast.error('Error al cargar usuarios iniciales.');
         console.error('Error loading users:', usersResponse.error);
       }
 
-      if (groupsResponse) {
-        setGroups(groupsResponse);
+      if (groupsResponse.success && groupsResponse.groups) {
+        setGroups(groupsResponse.groups);
       } else {
         toast.error('Error al cargar grupos iniciales.');
         console.error('Error loading groups');

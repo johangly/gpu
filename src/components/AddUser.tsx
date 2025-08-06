@@ -110,6 +110,28 @@ const AddUser: React.FC<AddUserProps> = ({ groups, onAddUser }) => {
       return;
     }
 
+    if (selectedOption === null) {
+      toast.error('Grupo no seleccionado. Debe seleccionar un grupo para crear el usuario.');
+      return;
+    }
+
+    if (formData.clave === '' || formData.clave.length < 6) {
+      toast.error('La clave debe tener al menos 6 caracteres.');
+      return;
+    }
+
+    if (formData.apellido === '') {
+      toast.error('El campo de Apellido no puede estar vacio')
+    }
+
+    if (formData.nombre === '') {
+      toast.error('El campo de nombre no puede estar vacio')
+    }
+
+    if (formData.usuario === '') {
+      toast.error('El campo de Usuario no puede estar vacio')
+    }
+
     const response = await onAddUser({
       cedula: formData.cedula,
       nombre: formData.nombre,

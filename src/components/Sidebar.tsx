@@ -4,52 +4,63 @@ import { NavLink } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import type { SidebarProps } from '../types';
 import logo from '../assets/logo-group.svg'
+import { twMerge } from 'tailwind-merge';
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, menuItems, user }) => {
 
   return (
     <motion.aside
       initial={false}
-      animate={{ width: isCollapsed ? 80 : 280 }}
+      animate={{ width: isCollapsed ? 70 : 280 }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
       className="bg-white shadow-xl border-r border-gray-200 flex flex-col relative z-10"
     >
       {/* Header with Logo */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center justify-between">
+      <div className={twMerge("border-b border-gray-200 h-[92px]", isCollapsed ? "px-2 py-6" : "px-6 py-6")}>
+        <div className="flex items-center justify-center gap-x-8">
           <AnimatePresence mode="wait">
             {!isCollapsed && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-                className="flex items-center space-x-3"
-              >
-                <img 
-                  src={logo}
-                  alt="Universidad Logo" 
-                  className="w-10 h-10"
-                />
-                <div>
+              <>
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-center space-x-3"
+                >
+                  <img
+                    src={logo}
+                    alt="Universidad Logo"
+                    className="w-10 h-10"
+                  />
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, x: -50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -50 }}
+                  transition={{ duration: 0.4 }}
+                  className="text-center"
+                >
                   <h2 className="text-lg font-bold text-gray-900">Universidad</h2>
                   <p className="text-xs text-gray-500">Sistema Digital</p>
-                </div>
-              </motion.div>
+                </motion.div>
+              </>
             )}
           </AnimatePresence>
           
           {isCollapsed && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="mx-auto"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2, delay: 0.2, type: "spring", bounce: 1 }}
+              className="mx-auto transition-all"
             >
               <img 
                 src={logo} 
                 alt="Universidad Logo" 
-                className="w-8 h-8"
+                className="w-10 h-10"
               />
             </motion.div>
           )}
@@ -105,7 +116,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, menuItems, use
                           className="flex items-center justify-between flex-1"
                         >
                           <span className="font-medium">{item.label}</span>
-                          {item.badge && item.badge > 0 && (
+                          {item.badge && item.badge !== 0 && item.badge > 0 ? (
                             <motion.span
                               initial={{ scale: 0 }}
                               animate={{ scale: 1 }}
@@ -117,7 +128,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, menuItems, use
                             >
                               {item.badge}
                             </motion.span>
-                          )}
+                          ) : null}
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -130,7 +141,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle, menuItems, use
                         className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg whitespace-nowrap z-50 pointer-events-none"
                       >
                         {item.label}
-                        {item.badge && item.badge > 0 && (
+                        {item.badge && item.badge !== 0 && item.badge > 0 && (
                           <span className="ml-2 px-1.5 py-0.5 bg-red-500 text-xs rounded-full">
                             {item.badge}
                           </span>

@@ -6,9 +6,10 @@ interface GroupFilterProps {
   selectedGroup: number;
   onGroupChange: (group: number) => void;
   groups: SessionGroup[];
+  children?: React.ReactNode;
 }
 
-const GroupFilter: React.FC<GroupFilterProps> = ({ groups,selectedGroup, onGroupChange }) => {
+const GroupFilter: React.FC<GroupFilterProps> = ({ groups,selectedGroup, onGroupChange,children }) => {
 
 
   return (
@@ -16,7 +17,7 @@ const GroupFilter: React.FC<GroupFilterProps> = ({ groups,selectedGroup, onGroup
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.3 }}
-      className="mb-8"
+      className="mb-8 flex flex-col gap-y-3"
     >
       <div className="flex items-center space-x-4">
         <Filter className="w-5 h-5 text-gray-600" />
@@ -41,6 +42,7 @@ const GroupFilter: React.FC<GroupFilterProps> = ({ groups,selectedGroup, onGroup
           ))}
         </div>
       </div>
+      {children ? children : null}
     </motion.div>
   );
 };

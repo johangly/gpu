@@ -1,11 +1,21 @@
-import type { User, editUserProps, createUserProps } from ".";
+import type { User, editUserProps, createUserProps, SessionGroup } from ".";
 import type { AttendanceRecord } from '.'
 
 interface AttendanceActivitiesResponse {
   success: boolean;
   message?: string;
   error?: string;
-  activities?: AttendanceRecord[];
+  activities: AttendanceRecord[];
+}
+
+interface AttendanceAllActivitiesResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+  activities: ActivitiesProps[];
+}
+export interface ActivitiesProps extends AttendanceRecord {
+  empleado: User
 }
 
 export interface Api {
@@ -20,10 +30,7 @@ export interface Api {
   getGroups: () => {
     success: boolean;
     error?: unknown;
-    groups: {
-      id_grupo: string,
-      nombre_grupo: string,
-    }[];
+    groups: SessionGroup[];
   },
   getUsers: () => {
     success: boolean;
@@ -50,7 +57,7 @@ export interface Api {
   getLast10UserActivities: (id_empleado: number) => Promise<AttendanceActivitiesResponse>;
 
   // Trae todas las actividades del usuario
-  getAllUserActivities: (id_empleado: number) => Promise<AttendanceActivitiesResponse>;
+  getAllUserActivities: () => Promise<AttendanceAllActivitiesResponse>;
   markAttendance: (data: {
     id_empleado: number;
     tipo_accion: 'entrada' | 'salida';

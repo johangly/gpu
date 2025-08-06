@@ -6,7 +6,7 @@
  * @param {'entrada' | 'salida'} actionType El tipo de acción (entrada o salida).
  * @returns {string} La cadena de texto formateada.
  */
-function formatAttendanceDateTime(isoDateString: string, actionType: 'entrada' | 'salida'): string {
+function formatAttendanceDateTime(isoDateString: string, actionType: 'entrada' | 'salida',type:string | null = null): string {
   const recordDate = new Date(isoDateString);
   const now = new Date();
 
@@ -43,6 +43,10 @@ function formatAttendanceDateTime(isoDateString: string, actionType: 'entrada' |
   // --- 3. Construir el mensaje final ---
   // Asegurarse de que el 'día' no se duplique si ya está en el indicador
   const actionText = actionType === 'entrada' ? 'entrada' : 'salida';
+
+  if (type === 'formatted') {
+    return `${formattedTime} (${dayIndicator}).`;
+  }
 
   // Ajustar la frase para que sea más natural
   if (dayIndicator === 'hoy' || dayIndicator === 'ayer') {

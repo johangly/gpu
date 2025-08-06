@@ -3,7 +3,7 @@ import { app, BrowserWindow, ipcMain } from 'electron/main';
 import path from 'path'; 
 import { fileURLToPath } from 'url'; 
 import isDev from 'electron-is-dev';
-import { z } from 'zod';
+import { includes, z } from 'zod';
 // import db.Personal from './backend/db/models/personal.js';
 // import db.GruposPersonal from './backend/db/models/grupos_personal.js';
 // import db.Asistencia from './backend/db/models/asistencia.js';
@@ -123,21 +123,6 @@ async function createUser(event,data) {
         nombre_grupo: z.string().min(1, { message: "El nombre del grupo es requerido." })
       }),
     });
-
-    console.log('Validating user data:', data);
-
-    // const dataValidation = {
-    //   cedula: data.cedula,
-    //   nombre: data.nombre,
-    //   apellido: data.apellido,
-    //   usuario: data.usuario,
-    //   clave: data.clave,
-    //   grupo: {
-    //     id_grupo: data.grupo.id_grupo,
-    //     nombre_grupo: data.grupo.nombre_grupo
-    //   },
-    //   activo: true
-    // };
 
     const validationResult = userSchema.safeParse(data);
     if (!validationResult.success) {
@@ -342,16 +327,31 @@ async function getLast10UserActivities(event, id_empleado) {
 }
 
 // Trae todas las actividades del usuario
-async function getAllUserActivities(event, id_empleado) {
+async function getAllUserActivities() {
   try {
     const activities = await db.Asistencia.findAll({
-      where: { id_empleado },
+      include: {
+        model: db.Personal,
+        as: 'empleado',
+        attributes: ['id_empleado', 'nombre', 'apellido', 'usuario', 'cedula'],
+        include: {
+          model: db.GruposPersonal,
+          as: 'grupo',
+          attributes: ['id_grupo', 'nombre_grupo']
+        }
+      },
       order: [['fecha_hora', 'DESC']],
-      raw: true,
+      attributes: { exclude: ['id_empleado'] },
     });
-    return { success: true, activities: activities, message: `Todas las actividades obtenidas exitosamente.` };
+
+    // Mapea los resultados para convertirlos en objetos planos de JavaScript.
+    // Esto resuelve el error de "object could not be cloned".
+    const plainActivities = activities.map(activity => activity.get({ plain: true }));
+
+    return { success: true, activities: plainActivities, message: 'Todas las actividades obtenidas exitosamente.' };
   } catch (error) {
-    return { success: false, error: error.message, message: `Error al obtener todas las actividades del usuario: ${id_empleado}` };
+    console.error('Error al obtener todas las actividades:', error);
+    return { success: false, error: error.message, message: `Error al obtener todas las actividades.` };
   }
 }
 

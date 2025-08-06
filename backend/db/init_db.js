@@ -51,7 +51,7 @@ async function createAdminUser() {
 
     // Asegúrate de que estas variables de entorno existan en tu .env
     const adminUserData = {
-      cedula: process.env.ADMIN_CEDULA || 'V-99999999', // Añadido valor por defecto
+      cedula: process.env.ADMIN_CEDULA || 'V99999999', // Añadido valor por defecto
       nombre: process.env.ADMIN_NAME || 'Admin',
       apellido: process.env.ADMIN_LAST_NAME || 'User',
       usuario: process.env.ADMIN_USER || 'admin',
