@@ -3,14 +3,11 @@ import { app, BrowserWindow, ipcMain } from 'electron/main';
 import path from 'path'; 
 import { fileURLToPath } from 'url'; 
 import isDev from 'electron-is-dev';
-import { includes, z } from 'zod';
-// import db.Personal from './backend/db/models/personal.js';
-// import db.GruposPersonal from './backend/db/models/grupos_personal.js';
-// import db.Asistencia from './backend/db/models/asistencia.js';
+import z from 'zod';
 import argon2 from 'argon2';
 import dotenv from 'dotenv';  
+import { Op } from 'sequelize';
 import db from './backend/db/db.js'; // Importa la configuración de la base de datos
-import fs from 'fs';
 import { connection } from './backend/db/db_connection.js'; // Asegúrate de que la ruta sea correcta
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -497,6 +494,163 @@ async function handleGetGroups(event) {
   }
 }
 
+async function createGroup(event, data) {
+  try {
+    const groupSchema = z.object({
+      nombre_grupo: z.string()
+        .min(1, { message: "El nombre del grupo es requerido." })
+        .max(50, { message: "El nombre no puede exceder los 50 caracteres." })
+        .trim()
+        .nonempty({ message: "El nombre del grupo es requerido." })
+    });
+
+    const validationResult = groupSchema.safeParse({nombre_grupo: data});
+    if (!validationResult.success) {
+      return { success: false, error: validationResult.error, message: "Datos del grupo inválidos." };
+    }
+
+    const [group, created] = await db.GruposPersonal.findOrCreate({
+      where: { nombre_grupo: data },
+      defaults: {
+        nombre_grupo: data,
+        creado_en: new Date(),
+        actualizado_en: new Date()
+      }
+    });
+
+    if (created) {
+      console.log(`Grupo '${group.nombre_grupo}' creado exitosamente.`);
+      return {
+        success: true,
+        error: null,
+        newGroup: {
+          id_grupo: group.id_grupo,
+          nombre_grupo: group.nombre_grupo,
+          creado_en: group.creado_en,
+          actualizado_en: group.actualizado_en
+        },
+        message: `Grupo '${group.nombre_grupo}' creado exitosamente.`
+      };
+    } else {
+      console.log(`Grupo '${group.nombre_grupo}' ya existe.`);
+      return {
+        success: true,
+        error: null,
+        newGroup: null,
+        message: `Grupo '${group.nombre_grupo}' ya existe.`
+      };
+    }
+  } catch (error) {
+    console.error(`Error al crear grupo: ${error.message}`);
+    return {
+      success: false,
+      error: error,
+      newGroup: null,
+      message: `Error al crear grupo: ${error.message}`
+    };
+  }
+}
+
+async function editGroup(event, data) {
+  try {
+    const groupSchema = z.object({
+      id_grupo: z.number({ invalid_type_error: "El ID del grupo debe ser un número." }),
+      nombre_grupo: z.string()
+        .min(1, { message: "El nombre del grupo es requerido." })
+        .max(50, { message: "El nombre no puede exceder los 50 caracteres." })
+        .trim()
+        .nonempty({ message: "El nombre del grupo es requerido." })
+    });
+
+    const validationResult = groupSchema.safeParse({id_grupo: data.id_grupo, nombre_grupo: data.nombre_grupo});
+    if (!validationResult.success) {
+      return { success: false, error: validationResult.error, message: "Datos del grupo inválidos." };
+    }
+
+    const group = await db.GruposPersonal.findByPk(data.id_grupo);
+
+    if (!group) {
+      return { success: false, error: { general: "Grupo no encontrado." }, message: "Grupo no encontrado." };
+    }
+
+    // Verificar si el nuevo nombre ya existe en otro grupo
+    const existingGroup = await db.GruposPersonal.findOne({
+      where: {
+        nombre_grupo: data.nombre_grupo,
+        id_grupo: { [Op.ne]: data.id_grupo } // Excluye el grupo actual
+      }
+    });
+
+    if (existingGroup) {
+      return {
+        success: false,
+        error: { general: "El nombre del grupo ya existe." },
+        message: "El nombre del grupo ya existe."
+      };
+    }
+
+    // Actualizar el grupo
+    await group.update({
+      nombre_grupo: data.nombre_grupo,
+      actualizado_en: new Date()
+    });
+
+    console.log(`Grupo '${group.nombre_grupo}' actualizado exitosamente.`);
+    return {
+      success: true,
+      error: null,
+      updatedGroup: {
+        id_grupo: group.id_grupo,
+        nombre_grupo: group.nombre_grupo,
+        creado_en: group.creado_en,
+        actualizado_en: group.actualizado_en
+      },
+      message: `Grupo '${group.nombre_grupo}' actualizado exitosamente.`
+    };
+  } catch (error) {
+    console.error(`Error al actualizar grupo: ${error.message}`);
+    return {
+      success: false,
+      error: error,
+      updatedGroup: null,
+      message: `Error al actualizar grupo: ${error.message}`
+    };
+  }
+}
+
+async function deleteGroup(event, id_grupo) {
+  try {
+    // Primero verificar si hay usuarios asociados al grupo
+    const usersInGroup = await db.Personal.count({
+      where: { id_grupo }
+    });
+
+    if (usersInGroup > 0) {
+      return {
+        success: false,
+        error: { general: "No se puede eliminar el grupo porque tiene usuarios asociados." },
+        message: `No se puede eliminar el grupo porque tiene ${usersInGroup} usuarios asociados.`
+      };
+    }
+
+    // Si no hay usuarios asociados, proceder con la eliminación
+    const result = await db.GruposPersonal.destroy({
+      where: { id_grupo }
+    });
+
+    if (result) {
+      console.log(`Grupo eliminado exitosamente.`);
+      return { success: true, error: null, message: `Grupo eliminado exitosamente.` };
+    } else {
+      console.log(`No se encontró grupo con ID ${id_grupo}.`);
+      return { success: false, error: null, message: `No se encontró grupo.` };
+    }
+  } catch (error) {
+    console.error(`Error al eliminar grupo con ID ${id_grupo}: ${error.message}`);
+    return { success: false, error: error, message: `Error al eliminar grupo: ${error.message}` };
+  }
+}
+
 async function handleGetUsers(event) {
   try {
     const users = await db.Personal.findAll({
@@ -579,6 +733,9 @@ app.whenReady().then(async () => {
     ipcMain.handle('markAttendance', markAttendance)
     ipcMain.handle('getLast10UserActivities', getLast10UserActivities)
     ipcMain.handle('getAllUserActivities', getAllUserActivities)
+    ipcMain.handle('createGroup', createGroup)
+    ipcMain.handle('editGroup', editGroup)
+    ipcMain.handle('deleteGroup', deleteGroup)
 
   } catch (error) {
     console.error('Error setting up IPC handler:', error);

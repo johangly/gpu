@@ -13,4 +13,7 @@ contextBridge.exposeInMainWorld('api', {
   getLastUserActivity: (id_empleado) => ipcRenderer.invoke('getLastUserActivity', id_empleado),
   getLast10UserActivities: (id_empleado) => ipcRenderer.invoke('getLast10UserActivities', id_empleado),
   getAllUserActivities: () => ipcRenderer.invoke('getAllUserActivities'),
+  createGroup: (nombre_grupo) => ipcRenderer.invoke('createGroup', nombre_grupo),
+  editGroup: (group) => ipcRenderer.invoke('editGroup', group),
+  deleteGroup: (id_grupo) => ipcRenderer.invoke('deleteGroup', id_grupo),
 })

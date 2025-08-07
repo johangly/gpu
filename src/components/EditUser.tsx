@@ -3,7 +3,6 @@ import type { SessionGroup, User, SelectedUserType } from '../types';
 import { motion } from 'framer-motion';
 import { twMerge } from 'tailwind-merge';
 import { User as UserIcon, Eye, EyeOff, Lock, IdCard, CircleUserRound, IdCardLanyard, type LucideIcon } from 'lucide-react';
-// import scrollText from '../assets/scroll-text.png';
 import { CustomSelectWithIcons } from './CustomSelect';
 import type { OptionType } from './CustomSelect';
 import type { editUserProps } from '../types';
@@ -95,6 +94,8 @@ const EditUser: React.FC<EditUserProps> = ({ groups, onEditUser, selectedUser })
     grupo: {
       id_grupo: selectedOption ? selectedOption.id : 0,
       nombre_grupo: selectedOption ? selectedOption.label : '',
+      creado_en: selectedUser.grupo.creado_en,
+      actualizado_en: selectedUser.grupo.actualizado_en,
     }
   });
 
@@ -134,6 +135,8 @@ const EditUser: React.FC<EditUserProps> = ({ groups, onEditUser, selectedUser })
         grupo: {
           id_grupo: selectedOption ? selectedOption.id : 0,
           nombre_grupo: selectedOption ? selectedOption.label : '',
+          creado_en: selectedUser.grupo.creado_en,
+          actualizado_en: selectedUser.grupo.actualizado_en,
         },
       });
 
@@ -149,6 +152,8 @@ const EditUser: React.FC<EditUserProps> = ({ groups, onEditUser, selectedUser })
           grupo: {
             id_grupo: 0,
             nombre_grupo: '',
+            creado_en: '',
+            actualizado_en: '',
           }
         });
         setSelectedOption(null);

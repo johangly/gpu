@@ -30,7 +30,9 @@ const Employees = () => {
     activo:true,
     grupo: {
       id_grupo: 0,
-      nombre_grupo: ''
+      nombre_grupo: '',
+      actualizado_en:'',
+      creado_en:''
     }
   });
 
@@ -62,7 +64,7 @@ const Employees = () => {
   useEffect(() => {
     fetchInitialData();
   }, []);
-  console.log('USUARIOS ||||||||||||||||||||',users)
+
   const filteredEmployees = users.filter(user => {
     const matchesGroup = selectedGroup === 0 || user.grupo?.id_grupo === selectedGroup;
     const matchesSearch = user.nombre.toLowerCase().includes(searchTerm.toLowerCase());
@@ -128,7 +130,9 @@ const Employees = () => {
         clave: '',
         grupo: {
           id_grupo: 0,
-          nombre_grupo: ''
+          nombre_grupo: '',
+          creado_en: '',
+          actualizado_en: '',
         },
         activo:true,
       }); // Resetea el estado del usuario seleccionado
@@ -278,7 +282,9 @@ const Employees = () => {
         activo: true,
         grupo: {
           id_grupo: 0,
-          nombre_grupo: ''
+          nombre_grupo: '',
+          creado_en: '',
+          actualizado_en: '',
         }
       }); // Resetea el estado del usuario seleccionado
 
@@ -456,7 +462,7 @@ const Employees = () => {
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
         <input
           type="text"
-          placeholder="Buscar por nombre o cargo..."
+          placeholder="Buscar por nombre..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"

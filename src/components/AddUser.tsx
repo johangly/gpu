@@ -141,6 +141,8 @@ const AddUser: React.FC<AddUserProps> = ({ groups, onAddUser }) => {
       grupo: {
         id_grupo: selectedOption ? selectedOption.id : 0,
         nombre_grupo: selectedOption ? selectedOption.label : '',
+        creado_en: '',
+        actualizado_en: '',
       },
     });
 

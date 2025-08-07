@@ -72,4 +72,7 @@ export interface Api {
       fecha_hora: string;
     };
   }>;
+  createGroup: (nombre_grupo:string) => Promise<{ success: boolean; error: unknown | null; newGroup?: SessionGroup; message?: string; }>,
+  editGroup: (group:{nombre_grupo:string, id_grupo:number}) => Promise<{ success: boolean; error: unknown | null; updatedGroup?: SessionGroup; message?: string; }>,
+  deleteGroup: (id_grupo: number) => Promise<{ success: boolean; error: unknown | null; message?: string; }>,
 }

@@ -15,6 +15,8 @@ export interface Session {
 export interface SessionGroup {
   id_grupo: number;
   nombre_grupo: string;
+  actualizado_en: string;
+  creado_en: string;
 }
 
 export interface createUserProps {

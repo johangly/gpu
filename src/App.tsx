@@ -11,6 +11,8 @@ import {
   // BarChart3,
   PieChart,
   Users,
+  GalleryVerticalEnd,
+  BookMarked
 } from 'lucide-react';
 
 import Sidebar from './components/Sidebar';
@@ -19,6 +21,7 @@ import Asistencias from './pages/Asistence'; // Asegúrate de que la ruta sea co
 // import Reports from './pages/Reports';
 import Employees from './pages/Employees';
 import MarkAttendance from './components/markAttendance';
+import Groups from './pages/Groups';
 // import Settings from './pages/Settings'; // Descomenta si usas la página de Settings
 
 function App() {
@@ -33,7 +36,9 @@ function App() {
       activo: false,
       grupo: {
         id_grupo: 0,
-        nombre_grupo: ""
+        nombre_grupo: "",
+        creado_en: "",
+        actualizado_en: ""
       }
     }
   });
@@ -74,8 +79,15 @@ function App() {
         {
           id: 'asistencias',
           label: 'Asistencias',
-          icon: PieChart,
+          icon: GalleryVerticalEnd,
           path: '/asistencias',
+          badge: 0// Ejemplo de badge para notificaciones
+        },
+        {
+          id: 'grupos',
+          label: 'Grupos',
+          icon: BookMarked,
+          path: '/grupos',
           badge: 0// Ejemplo de badge para notificaciones
         },
         // {
@@ -135,6 +147,7 @@ function App() {
                         {/* <Route path="/" element={<Overview />} /> */}
                         {/* <Route path="/reports" element={<Reports />} /> */}
                       <Route path="/employees" element={<Employees />} />
+                      <Route path="/grupos" element={<Groups />} />
                       <Route path="/asistencias" element={<Asistencias />} />
                         {/* <Route path="/settings" element={<Settings />} /> */}
                         {/* Redirecciona cualquier ruta no encontrada a la vista general */}
