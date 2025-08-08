@@ -23,7 +23,7 @@ const MarkAttendance: React.FC<AttendanceMarkerProps> = ({ user }) => {
     setLoading(true);
     try {
       const response = await window.api.getLastUserActivity(currentUser.id_empleado);
-      const response2 = await window.api.getAllUserActivities(currentUser.id_empleado);
+      const response2 = await window.api.getAllUserActivities();
       console.log(response2, 'respuesta de todas las actividades del usuario');
       console.log(response,'respuesta de la actividad del usuario')
       if (response.success && response.activities && response.activities.length > 0) {
