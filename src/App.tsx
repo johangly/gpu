@@ -18,7 +18,7 @@ import {
 import Sidebar from './components/Sidebar';
 import Asistencias from './pages/Asistence'; // Asegúrate de que la ruta sea correcta
 // import Overview from './pages/Overview';
-// import Reports from './pages/Reports';
+import Reports from './pages/Reports';
 import Employees from './pages/Employees';
 import MarkAttendance from './components/markAttendance';
 import Groups from './pages/Groups';
@@ -37,6 +37,7 @@ function App() {
       grupo: {
         id_grupo: 0,
         nombre_grupo: "",
+        horarios: [],
         creado_en: "",
         actualizado_en: ""
       }
@@ -63,12 +64,12 @@ function App() {
         //   icon: BarChart3,
         //   path: '/', // Ruta base
         // },
-        // {
-        //   id: 'reports',
-        //   label: 'Reportes',
-        //   icon: PieChart,
-        //   path: '/reports',
-        // },
+        {
+          id: 'reports',
+          label: 'Reportes',
+          icon: PieChart,
+          path: '/reports',
+        },
         {
           id: 'employees',
           label: 'Personal',
@@ -145,7 +146,7 @@ function App() {
                     : <>
                         {/* La ruta raíz '/' se renderizará cuando la URL sea http://localhost:5173/#/ */}
                         {/* <Route path="/" element={<Overview />} /> */}
-                        {/* <Route path="/reports" element={<Reports />} /> */}
+                      <Route path="/reports" element={<Reports />} />
                       <Route path="/employees" element={<Employees />} />
                       <Route path="/grupos" element={<Groups />} />
                       <Route path="/asistencias" element={<Asistencias />} />

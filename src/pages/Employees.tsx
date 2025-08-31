@@ -31,6 +31,7 @@ const Employees = () => {
     grupo: {
       id_grupo: 0,
       nombre_grupo: '',
+      horarios: [],
       actualizado_en:'',
       creado_en:''
     }
@@ -131,6 +132,7 @@ const Employees = () => {
         grupo: {
           id_grupo: 0,
           nombre_grupo: '',
+          horarios: [],
           creado_en: '',
           actualizado_en: '',
         },
@@ -206,6 +208,7 @@ const Employees = () => {
       return { success: false, message: 'Error al intentar crear el usuario.: '+ (typeof error === 'string' ? error : 'Error desconocido.') };
     }
   }
+
 
   async function editUser(user: editUserProps): Promise<{ success: boolean; message?: string }> {
 
@@ -283,6 +286,7 @@ const Employees = () => {
         grupo: {
           id_grupo: 0,
           nombre_grupo: '',
+          horarios: [],
           creado_en: '',
           actualizado_en: '',
         }

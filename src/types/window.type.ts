@@ -1,5 +1,5 @@
-import type { User, editUserProps, createUserProps, SessionGroup } from ".";
-import type { AttendanceRecord } from '.'
+import type { User, editUserProps, createUserProps, SessionGroup, HorarioFormData } from ".";
+import type { AttendanceRecord,CalculateAttendanceResponse } from '.'
 
 interface AttendanceActivitiesResponse {
   success: boolean;
@@ -72,7 +72,10 @@ export interface Api {
       fecha_hora: string;
     };
   }>;
-  createGroup: (nombre_grupo:string) => Promise<{ success: boolean; error: unknown | null; newGroup?: SessionGroup; message?: string; }>,
+  createGroup: (data:HorarioFormData) => Promise<{ success: boolean; error: unknown | null; newGroup?: SessionGroup; message?: string; }>,
   editGroup: (group:{nombre_grupo:string, id_grupo:number}) => Promise<{ success: boolean; error: unknown | null; updatedGroup?: SessionGroup; message?: string; }>,
   deleteGroup: (id_grupo: number) => Promise<{ success: boolean; error: unknown | null; message?: string; }>,
+  calculateAttendance: (data: { fechaInicio: string; fechaFin: string }) => Promise<CalculateAttendanceResponse>,
+  generateTestAttendances: () => Promise<{ success: boolean; error: unknown | null; message?: string; }>,
+  printReport: (data: CalculateAttendanceResponse | null) => Promise<{ success: boolean; error: unknown | null; message?: string; }>,
 }

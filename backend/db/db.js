@@ -5,6 +5,7 @@ import { connection } from './db_connection.js'; // Importa la conexión desde d
 import GruposPersonal from './models/grupos_personal.js';
 import Personal from './models/personal.js';
 import Asistencia from './models/asistencia.js';
+import HorariosGrupos from './models/horarios.js';
 
 const db = {
   sequelize: connection,
@@ -12,6 +13,7 @@ const db = {
   Personal: Personal(connection,DataTypes),
   GruposPersonal: GruposPersonal(connection,DataTypes),
   Asistencia: Asistencia(connection,DataTypes),
+  HorariosGrupos: HorariosGrupos(connection,DataTypes),
 }; // Objeto para almacenar los modelos y la instancia de Sequelize
 
 
@@ -19,7 +21,6 @@ db.GruposPersonal.hasMany(db.Personal, {
   foreignKey: 'id_grupo',
   as: 'personal', // Alias para la relación
 });
-
 
 db.Personal.belongsTo(db.GruposPersonal, {
   foreignKey: 'id_grupo', // Clave foránea en la tabla 'personal'
@@ -34,14 +35,23 @@ db.Personal.hasMany(db.Asistencia, {
   as: 'registrosAsistencia',
 });
 
-db.Asistencia.belongsTo(db.Personal, {
-  foreignKey: 'id_empleado',
-  as: 'empleado',
+// Un Grupo tiene muchos Horarios (uno a muchos)
+db.GruposPersonal.hasMany(db.HorariosGrupos, {
+  foreignKey: 'id_grupo',
+  as: 'horarios', // Permite usar `grupo.getHorarios()`
 });
 
-// db.Personal = new db.Personal(db.sequelize, DataTypes);
-// db.GruposPersonal = new db.GruposPersonal(db.sequelize, DataTypes);
-// db.Asistencia = new db.Asistencia(db.sequelize, DataTypes);
+// Un Horario pertenece a un Grupo (muchos a uno)
+db.HorariosGrupos.belongsTo(db.GruposPersonal, {
+  foreignKey: 'id_grupo',
+  as: 'grupo', // Permite usar `horario.getGrupo()`
+});
+
+// Un registro de Asistencia pertenece a un Empleado/Personal (muchos a uno)
+db.Asistencia.belongsTo(db.Personal, {
+  foreignKey: 'id_empleado',
+  as: 'empleado', // Permite usar `asistencia.getEmpleado()`
+});
 
 
 // Sincroniza los modelos con la base de datos
@@ -52,7 +62,7 @@ async function syncDatabase() {
   try {
     await db.sequelize.authenticate();
     console.log('Conexión a la base de datos establecida correctamente.');
-    await db.sequelize.sync({ alter: true }); // Sincroniza los modelos con la DB
+    // await db.sequelize.sync({ alter: true }); // Sincroniza los modelos con la DB
     console.log('Modelos sincronizados con la base de datos.');
   } catch (error) {
     console.error('No se pudo conectar o sincronizar la base de datos:', error);

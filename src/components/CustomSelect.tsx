@@ -64,18 +64,13 @@ function CustomSelectWithIcons({ options, selectedOption, onSelect, placeholder 
     hover: { opacity: 1 },
   }
 
-  const selectElementIcon = {
-    rest: { scale: 1 },
-    hover: { scale: 1.1 },
-  }
-
   const selectElementText = {
     rest: { scale: 1 },
     hover: { scale: 1.03 },
   }
 
   // Determina el icono y la etiqueta a mostrar en el botón principal
-  const displayIconComponent = selectedOption && selectedOption.icon ? IconMap[selectedOption.icon] : IconMap['ScrollText']; // Usa 'ScrollText' como icono por defecto si no hay uno seleccionado
+  const displayIconComponent = IconMap['ScrollText']; // Usa 'ScrollText' como icono por defecto si no hay uno seleccionado
   const displayLabel = selectedOption ? selectedOption.label : placeholder;
 
   return (
@@ -111,7 +106,6 @@ function CustomSelectWithIcons({ options, selectedOption, onSelect, placeholder 
           aria-labelledby="select-button"
         >
           {options.map((option) => {
-            const IconComponent = option.icon ? IconMap[option.icon] : null; // IconComponent puede ser null
             const isSelected = selectedOption && selectedOption.value === option.value;
             if (option.value !== 0) {
               return (
@@ -125,14 +119,6 @@ function CustomSelectWithIcons({ options, selectedOption, onSelect, placeholder 
                   whileHover={'hover'}
                   aria-selected={!!isSelected}
                 >
-                  {IconComponent && React.createElement(
-                    motion(IconComponent), 
-                    {
-                      variants: selectElementIcon,
-                      className: `w-5 h-5 group-hover:text-theme-3 mr-3 ${isSelected ? 'text-theme-3' : 'text-gray-500'}`
-                    }
-                  )}
-                  {!IconComponent && <div className="w-5 h-5 mr-3"></div>} {/* Espacio para opciones sin icono */}
                   <motion.span variants={selectElementText}>{option.label}</motion.span>
                   {isSelected && (
                     <Check className="w-5 h-5 ml-auto text-theme-3" />

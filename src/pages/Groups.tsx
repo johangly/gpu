@@ -6,13 +6,17 @@ import { fetchGroups } from '../utils/getGroups';
 import type { SessionGroup } from '../types';
 import { toast } from 'react-hot-toast';
 import { twMerge } from 'tailwind-merge';
-import formatAttendanceDateTime from '../components/dateFormatter';
 import { AddGroup } from '../components/AddGroup';
 import { EditGroup } from '../components/EditGroup';
+import type { HorarioFormData } from '../types';
+import { formatToAmPm } from '../utils/formatToAmPm';
+
+const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 const Groups = () => {
   const [selectedGroup, setSelectedGroup] = useState<SessionGroup>({
     id_grupo: 0,
+    horarios: [],
     nombre_grupo: '',
     actualizado_en:'',
     creado_en:''
@@ -50,11 +54,11 @@ const Groups = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mode, setMode] = useState<'add' | 'edit' | 'delete' | null>();
 
-  async function addGroup(nombre_grupo: string): Promise<{ success: boolean; message?: string }> {
-    console.log('nombre_grupo', nombre_grupo)
+  async function addGroup(data:HorarioFormData): Promise<{ success: boolean; message?: string }> {
+    console.log('data', data)
     try {
       const creatingGroup = new Promise<{ message: string; success: boolean; newGroup?: SessionGroup }>((resolve, reject) => {
-        window.api.createGroup(nombre_grupo)
+        window.api.createGroup(data)
           .then((response: { success: boolean; error: unknown | null; newGroup?: SessionGroup; message?: string; }) => {
             if (response.success === true) {
               resolve({
@@ -169,15 +173,12 @@ const Groups = () => {
     }
   }
 
-  async function editGroup(nombre_grupo: string,id_grupo: number): Promise<{ success: boolean; message?: string }> {
+  async function editGroup(data: HorarioFormData, id_grupo: number): Promise<{ success: boolean; message?: string }> {
     try {
-      const response = await window.api.editGroup({
-        nombre_grupo:nombre_grupo,
-        id_grupo:id_grupo
-      });
+      const response = await window.api.editGroup({ ...data, id_grupo });
       if (response.success) {
-        setGroups(prevGroups => 
-          prevGroups.map(group => 
+        setGroups(prevGroups =>
+          prevGroups.map(group =>
             group.id_grupo === id_grupo ? response.updatedGroup! : group
           )
         );
@@ -248,7 +249,7 @@ const Groups = () => {
           {isModalOpen && (
             // Overlay del modal
             <motion.div
-              className={twMerge('fixed min-h-screen overflow-y-auto inset-0  bg-opacity-70 backdrop-blur-sm flex items-start justify-center z-50 p-4',mode === 'delete' || mode === 'add' || mode === 'edit' ? 'items-center bg-slate-900/50' : 'bg-slate-900/50', mode === 'delete' ? 'bg-red-100/50' : '')}
+              className={twMerge('fixed min-h-screen overflow-y-auto inset-0  bg-opacity-70 backdrop-blur-sm flex items-start justify-center z-50 p-4',mode === 'delete' || mode === 'edit' ? 'items-center bg-slate-900/50' : 'bg-slate-900/50', mode === 'delete' ? 'bg-red-100/50' : '')}
               variants={backdropVariants}
               initial="hidden"
               animate="visible"
@@ -257,7 +258,7 @@ const Groups = () => {
             >
               {/* Contenido del modal */}
               <motion.div
-                className={twMerge("bg-white rounded-2xl shadow-2xl p-8 max-w-3xl w-full text-center relative overflow-hidden transform",mode === 'delete' || mode === 'add' || mode === 'edit' ? 'max-w-xl' : '')}
+                className={twMerge("bg-white rounded-2xl shadow-2xl p-8 max-w-3xl w-full text-center relative overflow-hidden transform",mode === 'delete' || mode === 'add' || mode === 'edit' ? 'max-w-3xl' : '')}
                 variants={modalVariants}
                 initial="hidden"
                 animate="visible"
@@ -391,16 +392,21 @@ const Groups = () => {
                     <p className="text-sm text-gray-500">{group.nombre_grupo}</p>
                   </div>
                 </div>
-                <div className="space-y-3">
-                  <div className='border-b border-gray-200 my-5'></div>
-                  <div className="flex justify-between items-center flex-col">
-                    <span className="text-sm text-gray-600 text-left">Fecha de creacion</span>
-                    <span className="text-sm font-medium px-3 py-2 rounded-md w-text-center">{formatAttendanceDateTime(group.creado_en,"salida","formatted")}</span>
-                  </div>
-                  <div className="flex justify-between items-center flex-col">
-                    <span className="text-sm text-gray-600 text-left">Fecha de actualizacion</span>
-                    <span className="text-sm font-medium px-3 py-2 rounded-md w-text-center">{formatAttendanceDateTime(group.actualizado_en,"salida","formatted")}</span>
-                  </div>
+                <div className="space-y-2 pt-2">
+                  <h5 className="text-sm font-bold text-gray-800 mb-2 text-center">Horario Semanal</h5>
+                  <div className='border-b border-gray-200 mb-3'></div>
+                  {group.horarios && group.horarios.length > 0 ? (
+                    [...group.horarios]
+                      .sort((a, b) => a.dia_semana - b.dia_semana)
+                      .map((horario, i) => (
+                        <div key={i} className="flex justify-between items-center text-xs px-2">
+                          <span className="font-semibold text-gray-600">{diasSemana[horario.dia_semana - 1]}</span>
+                          <span className="font-mono text-gray-800 bg-gray-100 px-2 py-1 rounded">{formatToAmPm(horario.hora_inicio)} - {formatToAmPm(horario.hora_fin)}</span>
+                        </div>
+                      ))
+                  ) : (
+                    <p className="text-xs text-gray-500 text-center py-4">Horario no asignado</p>
+                  )}
                 </div>
                 <motion.div
                   initial={{ opacity: 0 }}
