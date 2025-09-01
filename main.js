@@ -865,8 +865,10 @@ async function generateTestAttendances() {
 async function calculateAttendance(event, data) {
   try {
     const { fechaInicio, fechaFin } = data;
+    console.log("startDate",fechaInicio);
+    console.log("endDate",fechaFin);
     const rangoFechas = generarRangoFechas(fechaInicio, fechaFin);
-    // generateTestAttendances();
+
     // Obtener todos los grupos excepto el de Administrativo que tienen horario
     const gruposConHorario = await db.GruposPersonal.findAll({
       where: {
@@ -913,6 +915,7 @@ async function calculateAttendance(event, data) {
         fecha: fechaFormateada
       };
     });
+
     // Mapear los resultados al formato deseado
     const gruposYHorarios = gruposConHorario.map(grupo => ({
       id_grupo: grupo.id_grupo,
@@ -924,6 +927,7 @@ async function calculateAttendance(event, data) {
         hora_fin: horario.hora_fin
       }))
     }));
+
     // Obtener todos los empleados activos con sus grupos
     const empleados = await db.Personal.findAll({
       where: { activo: true },
@@ -1208,8 +1212,14 @@ async function handlePrintReport(event, data) {
     });
     
     try {     
+      const page = await browser.newPage();
+      await page.setViewport({
+        width: 1200,
+        height: 800,
+        deviceScaleFactor: 2
+      });
       // Función para generar el HTML de un día
-      const generateDayHTML = (dia, index) => {
+      const generateDayHTML = (dia) => {
         const totalAsistencias = dia.asistencias?.length || 0;
         const asistenciasCompletas = dia.asistencias?.filter(a => a.estado === 'completo').length || 0;
         const asistenciasIncompletas = dia.asistencias?.filter(a => a.estado !== 'completo').length || 0;
@@ -1300,182 +1310,126 @@ async function handlePrintReport(event, data) {
         return html;
       };
       
-      // Generar HTML para todas las páginas (máximo 2 días por página)
-      const daysPerPage = 2;
-      const totalPages = Math.ceil(rangoFechas.length / daysPerPage);
-      console.log(totalPages);
-      console.log(rangoFechas);
-      for (let i = 0; i < totalPages; i++) {
-        const page = await browser.newPage();
-        await page.setViewport({
-          width: 1200,
-          height: 800,
-          deviceScaleFactor: 2
-        });
+      const allDaysHTML = rangoFechas.map(generateDayHTML).join('');
 
-        const startIdx = i * daysPerPage;
-        const endIdx = startIdx + daysPerPage;
-        const pageDays = rangoFechas.slice(startIdx, endIdx);
-        
-        const html = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="UTF-8">
-            <title>Reporte de Asistencia</title>
-            <style>
-              @page {
-                size: A4;
-                margin: 10mm;
-              }
-              body {
-                font-family: Arial, sans-serif;
-                line-height: 1.6;
-                color: #333;
-                padding: 0;
-                margin: 0;
-              }
-              .header {
-                text-align: center;
-                padding-bottom: 16px;
-              }
-              .header h1 {
-                margin: 0;
-                color: #1e40af;
-                font-size: 24px;
-              }
-              .header p {
-                margin: 8px 0 0;
-                color: #64748b;
-                font-size: 14px;
-              }
-              .stats {
-                display: flex;
-                justify-content: space-around;
-                background-color: #f8fafc;
-                padding: 16px;
-                border-radius: 8px;
-                margin-bottom: 5px;
-                font-size: 14px;
-              }
-              .stat-item {
-                text-align: center;
-              }
-              .stat-value {
-                font-size: 20px;
-                font-weight: 600;
-                color: #1e40af;
-                margin-bottom: 4px;
-              }
-              .stat-label {
-                color: #64748b;
-                font-size: 12px;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-              }
-              .page-break {
-                page-break-after: always;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h1>Reporte de Asistencia</h1>
-              <p>Generado el ${formatDate(now)} a las ${now.toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'})}</p>
-            </div>
-            
-            ${i === 0 ? `
-              <div class="stats">
-                <div class="stat-item">
-                  <div class="stat-value">${estadisticas.totalDias}</div>
-                  <div class="stat-label">Días</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-value">${estadisticas.totalEmpleados}</div>
-                  <div class="stat-label">Empleados</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-value">${estadisticas.totalAsistencias}</div>
-                  <div class="stat-label">Registros</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-value">${estadisticas.porcentajeAsistencia}</div>
-                  <div class="stat-label">Asistencia</div>
-                </div>
-              </div>
-            ` : ''}
-            
-            ${pageDays.map((dia, idx) => generateDayHTML(dia, idx)).join('')}
-            
-            ${i < totalPages - 1 ? '<div class="page-break"></div>' : ''}
-          </body>
-          </html>
-        `;
-        
-        await page.setContent(html, { waitUntil: 'networkidle0' });
-        
-        const pdfPath = path.join(reportsDir, `reporte_${i + 1}.pdf`);
-        await page.pdf({
-          path: pdfPath,
-          format: 'A4',
-          printBackground: true,
-          margin: {
-            top: '10mm',
-            right: '10mm',
-            bottom: '10mm',
-            left: '20mm'
+      const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Reporte de Asistencia</title>
+        <style>
+          @page {
+            size: A4;
+            margin: 10mm;
           }
-        });
+          body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            padding: 0;
+            margin: 0;
+          }
+          .header {
+            text-align: center;
+            padding-bottom: 16px;
+          }
+          .header h1 {
+            margin: 0;
+            color: #1e40af;
+            font-size: 24px;
+          }
+          .header p {
+            margin: 8px 0 0;
+            color: #64748b;
+            font-size: 14px;
+          }
+          .stats {
+            display: flex;
+            justify-content: space-around;
+            background-color: #f8fafc;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            font-size: 14px;
+          }
+          .stat-item {
+            text-align: center;
+          }
+          .stat-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 4px;
+          }
+          .stat-label {
+            color: #64748b;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+          }
+          .page-break {
+            page-break-after: always;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Reporte de Asistencia</h1>
+          <p>Generado el ${formatDate(now)} a las ${now.toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'})}</p>
+        </div>
+        <div class="stats">
+          <div class="stat-item">
+            <div class="stat-value">${estadisticas.totalDias}</div>
+            <div class="stat-label">Días</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">${estadisticas.totalEmpleados}</div>
+            <div class="stat-label">Empleados</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">${estadisticas.totalAsistencias}</div>
+            <div class="stat-label">Registros</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">${estadisticas.porcentajeAsistencia}</div>
+            <div class="stat-label">Asistencia</div>
+          </div>
+        </div>
+        ${allDaysHTML}
+      </body>
+      </html>
+    `;
+
+      await page.setContent(html, { waitUntil: 'domcontentloaded' });
         
-        await page.close();
-        console.log(`Página ${i + 1} generada: ${pdfPath}`);
-      }
+      const pdfPath = path.join(reportsDir, `reporte_completo.pdf`);
+      
+      await page.pdf({
+        path: pdfPath,
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '10mm',
+          right: '10mm',
+          bottom: '10mm',
+          left: '20mm'
+        }
+      });
+      console.log(`Reporte generado: ${pdfPath}`);
       
       await browser.close();
       
-      // Crear un archivo ZIP con todos los PDFs
-      if (totalPages > 1) {
-        const zipPath = path.join(reportsDir, 'reportes_asistencia.zip');
-        const output = fs.createWriteStream(zipPath);
-        const archive = archiver('zip', { zlib: { level: 9 } });
-        
-        return new Promise((resolve, reject) => {
-          output.on('close', () => {
-            console.log(`Archivo ZIP creado: ${zipPath}`);
-            resolve({ success: true, path: zipPath });
-          });
-          
-          archive.on('error', (err) => {
-            console.error('Error al crear el archivo ZIP:', err);
-            reject({ success: false, error: err.message });
-          });
-          
-          archive.pipe(output);
-          
-          // Agregar cada archivo PDF al ZIP
-          for (let i = 0; i < totalPages; i++) {
-            const pdfPath = path.join(reportsDir, `reporte_${i + 1}.pdf`);
-            archive.file(pdfPath, { name: `reporte_${i + 1}.pdf` });
-          }
-          
-          archive.finalize();
-        });
-      } else {
-        return { 
-          success: true, 
-          path: path.join(reportsDir, 'reporte_1.pdf') 
-        };
-      }
-      
+      return { success: true, path: pdfPath,error: null };
     } catch (error) {
       await browser.close();
       console.error('Error al generar el PDF:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: {...error,path:reportsDir} };
     }
     
   } catch (error) {
-    console.error('Error al crear el directorio de reportes:', error);
-    return { success: false, error: error.message };
+    console.error('Error al crear el directorio de reportes:', reportsDir);
+    return { success: false, error: {...error,path:reportsDir} };
   }
 }
 

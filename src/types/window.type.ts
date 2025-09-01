@@ -77,5 +77,5 @@ export interface Api {
   deleteGroup: (id_grupo: number) => Promise<{ success: boolean; error: unknown | null; message?: string; }>,
   calculateAttendance: (data: { fechaInicio: string; fechaFin: string }) => Promise<CalculateAttendanceResponse>,
   generateTestAttendances: () => Promise<{ success: boolean; error: unknown | null; message?: string; }>,
-  printReport: (data: CalculateAttendanceResponse | null) => Promise<{ success: boolean; error: unknown | null; message?: string; }>,
+  printReport: (data: CalculateAttendanceResponse | null) => Promise<{ success: boolean; error: unknown | {ruta:string}; message?: string; path?: string }>,
 }

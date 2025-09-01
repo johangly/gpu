@@ -1,13 +1,15 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calculator, Search, Download } from 'lucide-react';
+import { Calculator, Search, Download, Calendar as CalendarIcon } from 'lucide-react';
 import type { Transition } from 'framer-motion'
-// import type { SessionGroup } from '../types';
-// import { toast } from 'react-hot-toast';
 import { twMerge } from 'tailwind-merge';
-// import { formatToAmPm } from '../utils/formatToAmPm';
+import { formatToAmPm } from '../utils/formatToAmPm';
 import type { CalculateAttendanceResponse, DiaAsistencia } from '../types';
-// const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+import toast from 'react-hot-toast';
+import { Calendar } from "../components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
+import { Button } from "../components/ui/button";
+import { cn } from '../lib/utils';
 
 // Función para formatear horas (HH:MM)
 const formatTime = (timeInput: string | Date | null): string => {
@@ -82,14 +84,32 @@ const Reports = () => {
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [calculedAttendance, setCalculedAttendance] = useState<CalculateAttendanceResponse | null>(null);
-  const contentRef = useRef(null);
+  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+  const [dateRange, setDateRange] = useState({
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+    endDate: new Date()
+  });
+
+  const formatDateForDisplay = (date: Date) => {
+    return date.toLocaleDateString("es-ES", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    });
+  };
 
   const handleDownloadPdf = async () => {
     try {
         const result = await window.api.printReport(calculedAttendance);
         console.log(result);
+        if (result.success) {
+          toast.success(`Reporte generado exitosamente en ${result.path}`, { duration: 5000,style:{width:'auto',maxWidth:'900px'} }); 
+        }else{
+          toast.error(`Error al generar el reporte: ${result.error}`,{ duration: 5000,style:{width:'auto',maxWidth:'900px'} });
+        }
     } catch (error) {
       console.error("Error al generar el PDF:", error);
+      toast.error(`Error al generar el reporte: ${error ? error : 'Error desconocido'}`, { duration: 5000,style:{width:'auto',maxWidth:'900px'} });
     }
   };
 
@@ -102,24 +122,8 @@ const Reports = () => {
     }));
   };
 
-//   const fetchInitialData = async () => {
-//     // Inicializar días expandidos cuando se cargan los datos
-//     if (calculedAttendance?.data?.rangoFechas) {
-//       const initialExpandedState: Record<string, boolean> = {};
-//       calculedAttendance.data.rangoFechas.forEach(dia => {
-//         initialExpandedState[dia.fecha] = false;
-//       });
-//       setExpandedDays(initialExpandedState);
-//     }
-//   };
-
-//     useEffect(() => {
-//         fetchInitialData();
-//     }, []);
-
-
   // modal state
-    const [mode, setMode] = useState<'add' | 'edit' | 'delete' | null>();
+    const [mode] = useState<'add' | 'edit' | 'delete' | null>();
     const backdropVariants = {
         visible: { opacity: 1 },
         hidden: { opacity: 0 },
@@ -145,11 +149,23 @@ const Reports = () => {
 
     async function calculateAttendance() {
         try {
-            const result = await window.api.calculateAttendance({
-                fechaInicio: '2025-01-01',
-                fechaFin: '2025-02-28'
-            });
+      // Formatear fechas a DD-MM-AAAA
+      const formatDateForAPI = (date: Date) => {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${year}-${month}-${day}`;
+      };
+      console.log("startDate",formatDateForAPI(dateRange.startDate));
+      console.log("endDate",formatDateForAPI(dateRange.endDate));
+      
+      const result = await window.api.calculateAttendance({
+        fechaInicio: formatDateForAPI(dateRange.startDate),
+        fechaFin: formatDateForAPI(dateRange.endDate)
+      });
+      
             setCalculedAttendance(result);
+      setIsDateModalOpen(false);
             
             // Inicializar el estado de días expandidos cuando se cargan los datos
             if (result?.data?.rangoFechas) {
@@ -161,9 +177,9 @@ const Reports = () => {
             }
         } catch (error) {
             console.error(error);
-            return { success: false, message: 'Error al intentar calcular la asistencia: '+ (typeof error === 'string' ? error : 'Error desconocido.') };
-        }
+      toast.error('Error al intentar calcular la asistencia');
     }
+  };
 
   return (
     <motion.div
@@ -173,7 +189,7 @@ const Reports = () => {
       transition={{ duration: 0.3 }}
       className="space-y-8 p-4"
     >
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-4   ">
         <div className='flex justify-center items-start flex-col'>
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
@@ -276,21 +292,8 @@ const Reports = () => {
             </motion.div>
           )}
         </AnimatePresence>
-        <div ref={contentRef} className="flex space-x-3">
-          <motion.button
-            onClick={() => { calculateAttendance() }}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-green-700 transition-colors shadow-lg"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Calculator className='w-4 h-4' />
-            <span>Calcular Asistencia</span>
-          </motion.button>
-          
-          {calculedAttendance?.data?.rangoFechas && calculedAttendance.data.rangoFechas.length > 0 ? (
+        <div className="flex space-x-3">
+          {calculedAttendance?.data?.rangoFechas && calculedAttendance.data.rangoFechas.length > 0 && (
             <motion.button
               onClick={handleDownloadPdf}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-blue-700 transition-colors shadow-lg"
@@ -301,12 +304,25 @@ const Reports = () => {
               whileTap={{ scale: 0.95 }}
             >
               <Download className='w-4 h-4' />
-              <span>Exportar a Excel</span>
+              <span>Exportar a PDF</span>
             </motion.button>
-          ) : null}
+          )}
+
+          <motion.button
+            onClick={() => setIsDateModalOpen(true)}
+            className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-green-700 transition-colors shadow-lg"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Calculator className='w-4 h-4' />
+            <span>Calcular Asistencia</span>
+          </motion.button>
         </div>
       </div>
-      <div className="space-y-4" ref={contentRef}>
+      <div className="space-y-4">
         {calculedAttendance?.data?.rangoFechas?.map((dia: DiaAsistencia, index) => {
           const isExpanded = expandedDays[dia.fecha] || false;
           
@@ -411,17 +427,16 @@ const Reports = () => {
                               {asistencia.grupo}
                             </td>
                             <td className="px-4 py-2 whitespace-nowrap text-center font-mono">
-                              {formatTime(asistencia.entrada)}
+                              {formatToAmPm(formatTime(asistencia.entrada))}
                             </td>
                             <td className="px-4 py-2 whitespace-nowrap text-center font-mono">
-                              {formatTime(asistencia.salida)}
+                              {formatToAmPm(formatTime(asistencia.salida))}
                             </td>
                             <td className="px-4 py-2 whitespace-nowrap text-center">
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                 asistencia.estado === 'completo' ? 'bg-green-100 text-green-800' :
                                 asistencia.estado === 'sin_entrada' || asistencia.estado === 'sin_salida' ? 
-                                'bg-yellow-100 text-yellow-800' : 
-                                'bg-red-100 text-red-800'
+                                    'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
                               }`}>
                                 {asistencia.estado.replace('_', ' ')}
                               </span>
@@ -452,6 +467,129 @@ const Reports = () => {
           <p className="text-gray-500">Seleccione un rango de fecha para calcular la asistencia</p>
         </motion.div>
       )}
+    {/* Date Range Modal */}
+    <AnimatePresence>
+    {isDateModalOpen && (
+      <motion.div
+        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={() => setIsDateModalOpen(false)}
+      >
+        <motion.div
+          className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full relative"
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -20, opacity: 0 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h2 className="text-2xl font-bold text-theme-3 mb-6 text-center">
+            Seleccionar Rango de Fechas
+          </h2>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Fecha de Inicio
+              </label>
+              <div className="relative">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dateRange.startDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateRange.startDate ? (
+                        formatDateForDisplay(dateRange.startDate)
+                      ) : (
+                        <span>Seleccionar fecha</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateRange.startDate}
+                      onSelect={(date) =>
+                        date && setDateRange(prev => ({ ...prev, startDate: date }))
+                      }
+                      disabled={(date) =>
+                        date > new Date() || date > dateRange.endDate
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Fecha de Fin
+              </label>
+              <div className="relative">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dateRange.endDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateRange.endDate ? (
+                        formatDateForDisplay(dateRange.endDate)
+                      ) : (
+                        <span>Seleccionar fecha</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateRange.endDate}
+                      onSelect={(date) =>
+                        date && setDateRange(prev => ({ ...prev, endDate: date }))
+                      }
+                      disabled={(date) =>
+                        date > new Date() || date < dateRange.startDate
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <motion.button
+                onClick={() => setIsDateModalOpen(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg flex-1 hover:bg-gray-300 transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Cancelar
+              </motion.button>
+              <motion.button
+                onClick={calculateAttendance}
+                className="px-4 py-2 bg-theme-3 text-white rounded-lg flex-1 hover:bg-theme-4 transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Calcular
+              </motion.button>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    )}
+    </AnimatePresence>
     </motion.div>
   );
 };
