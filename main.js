@@ -732,41 +732,83 @@ async function deleteGroup(event, id_grupo) {
   }
 }
 
-function generarRangoFechas(fechaInicio, fechaFin) {
-  const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-  const fechas = [];
-  const fechaInicioObj = new Date(fechaInicio);
-  const fechaFinObj = new Date(fechaFin);
-  
-  // Validar que las fechas sean válidas
-  if (isNaN(fechaInicioObj.getTime()) || isNaN(fechaFinObj.getTime())) {
-    throw new Error('Formato de fecha inválido. Usa el formato MM/DD/YYYY');
+/**
+ * Crea una fecha local sin problemas de zona horaria
+ * @param {number} year - Año (ej. 2025)
+ * @param {number} month - Mes (1-12)
+ * @param {number} day - Día del mes
+ * @returns {Date} Objeto Date configurado al mediodía local
+ */
+function createLocalDate(year, month, day) {
+  return new Date(year, month - 1, day, 12, 0, 0);
+}
+
+/**
+ * Valida y parsea una fecha en formato YYYY-MM-DD
+ * @param {string} dateStr - Fecha en formato YYYY-MM-DD
+ * @returns {Date} Objeto Date válido
+ * @throws {Error} Si el formato es incorrecto o la fecha es inválida
+ */
+function parseISODate(dateStr) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    throw new Error('Formato de fecha debe ser YYYY-MM-DD');
   }
 
-  // Asegurarnos de que la fecha de inicio sea menor o igual a la fecha fin
-  if (fechaInicioObj > fechaFinObj) {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = createLocalDate(year, month, day);
+
+  // Validar que los componentes coincidan (para detectar fechas inválidas como 2023-02-30)
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() + 1 !== month ||
+    date.getDate() !== day
+  ) {
+    throw new Error('Fecha inválida');
+  }
+
+  return date;
+}
+
+/**
+ * Genera un rango de fechas entre dos fechas (inclusive)
+ * @param {string} fechaInicioStr - Fecha de inicio en formato YYYY-MM-DD
+ * @param {string} fechaFinStr - Fecha de fin en formato YYYY-MM-DD
+ * @returns {Array} Array de objetos con día de la semana, fecha formateada y array de asistencias
+ * @throws {Error} Si las fechas son inválidas o si fechaInicio > fechaFin
+ */
+function generarRangoFechas(fechaInicioStr, fechaFinStr) {
+  const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  const fechas = [];
+  
+  // Parsear y validar fechas
+  const fechaInicio = parseISODate(fechaInicioStr);
+  const fechaFin = parseISODate(fechaFinStr);
+
+  // Validar que fechaInicio <= fechaFin
+  if (fechaInicio > fechaFin) {
     throw new Error('La fecha de inicio debe ser anterior o igual a la fecha de fin');
   }
 
-  // Crear un objeto Date para iterar
-  let fechaActual = new Date(fechaInicioObj);
-  
+  // Crear copia de fechaInicio para iterar
+  let fechaActual = new Date(fechaInicio);
+
   // Iterar hasta llegar a la fecha fin
-  while (fechaActual <= fechaFinObj) {
+  while (fechaActual <= fechaFin) {
     const diaSemana = diasSemana[fechaActual.getDay()];
     const fechaFormateada = fechaActual.toLocaleDateString('es-ES', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
     }).replace(/\//g, '/');
-
+    
     fechas.push({
       dia: diaSemana,
       fecha: fechaFormateada,
       asistencia: []
     });
 
-    // Pasar al siguiente día
+    // Pasar al siguiente día (creando nueva fecha para evitar mutaciones)
+    fechaActual = new Date(fechaActual);
     fechaActual.setDate(fechaActual.getDate() + 1);
   }
 
@@ -868,7 +910,7 @@ async function calculateAttendance(event, data) {
     console.log("startDate",fechaInicio);
     console.log("endDate",fechaFin);
     const rangoFechas = generarRangoFechas(fechaInicio, fechaFin);
-
+    console.log("rangoFechas",rangoFechas);
     // Obtener todos los grupos excepto el de Administrativo que tienen horario
     const gruposConHorario = await db.GruposPersonal.findAll({
       where: {
@@ -1185,6 +1227,424 @@ function formatDate(dateInput) {
 }
 
 
+// async function handlePrintReport(event, data) {
+//   if (!data || !data.data) {
+//     return { success: false, error: 'No se proporcionaron datos de asistencia' };
+//   }
+
+//   // Crear carpeta con la fecha y hora actual
+//   const now = new Date();
+//   const folderName = now.toISOString()
+//     .replace(/[:.]/g, '-')
+//     .replace('T', '_')
+//     .slice(0, 16); // Formato: YYYY-MM-DD_HH-MM
+    
+//   const reportsDir = path.join(os.homedir(), 'Documents', 'Reportes_Asistencia', folderName);
+  
+//   try {
+//     // Crear el directorio si no existe
+//     if (!fs.existsSync(reportsDir)) {
+//       fs.mkdirSync(reportsDir, { recursive: true });
+//     }
+    
+//     // Validar datos de entrada
+//     if (!data.data || !data.data.grupos || !data.data.rangoFechas) {
+//       throw new Error('Datos de entrada incompletos');
+//     }
+    
+//     const { rangoFechas, estadisticas, grupos } = data.data;
+//     const browser = await puppeteer.launch({
+//       headless: 'new',
+//       args: ['--no-sandbox', '--disable-setuid-sandbox']
+//     });
+    
+//     try {     
+//       const page = await browser.newPage();
+//       await page.setViewport({
+//         width: 1200,
+//         height: 800,
+//         deviceScaleFactor: 2
+//       });
+
+//       // Calcular días laborales por grupo
+//       const diasPorGrupo = {};
+      
+//       // Inicializar contadores de días por grupo
+//       grupos.forEach(grupo => {
+//         const diasTrabajo = new Set();
+        
+//         // Para cada día en el rango de fechas
+//         rangoFechas.forEach(dia => {
+//           const fecha = new Date(dia.fecha.split('/').reverse().join('-'));
+//           const diaSemana = fecha.getDay() + 1; // Convertir a 1-7 (lunes-domingo)
+          
+//           // Verificar si este grupo trabaja este día de la semana
+//           const trabajaEsteDia = grupo.horarios && Array.isArray(grupo.horarios) && 
+//             grupo.horarios.some(h => h && typeof h.dia_semana === 'number' && h.dia_semana === diaSemana);
+            
+//           if (trabajaEsteDia) {
+//             const fechaFormateada = fecha.toISOString().split('T')[0];
+//             diasTrabajo.add(fechaFormateada);
+//           }
+//         });
+        
+//         diasPorGrupo[grupo.id_grupo] = diasTrabajo.size || 1; // Mínimo 1 día para evitar divisiones por cero
+//       });
+      
+//       // Calcular estadísticas por empleado
+//       const empleadosStats = {};
+      
+//       rangoFechas.forEach(dia => {
+//         if (!dia.asistencias) return;
+        
+//         dia.asistencias.forEach(asistencia => {
+//           if (!empleadosStats[asistencia.id_empleado]) {
+//             empleadosStats[asistencia.id_empleado] = {
+//               id: asistencia.id_empleado,
+//               nombre: asistencia.nombre,
+//               apellido: asistencia.apellido,
+//               grupo: asistencia.grupo || 'Sin grupo',
+//               diasAsistidos: 0,
+//               diasCompletos: 0,
+//               diasIncompletos: 0,
+//               diasAusentes: 0,
+//               id_grupo: asistencia.id_grupo,
+//               totalDias: diasPorGrupo[asistencia.id_grupo] || 1
+//             };
+//           }
+          
+//           if (asistencia.estado === 'completo') {
+//             empleadosStats[asistencia.id_empleado].diasCompletos++;
+//             empleadosStats[asistencia.id_empleado].diasAsistidos++;
+//           } else if (asistencia.estado === 'ausente') {
+//             empleadosStats[asistencia.id_empleado].diasAusentes++;
+//           } else {
+//             empleadosStats[asistencia.id_empleado].diasIncompletos++;
+//             empleadosStats[asistencia.id_empleado].diasAsistidos++;
+//           }
+//         });
+//       });
+
+//       // Convertir a array y calcular porcentajes
+//       const empleadosArray = Object.values(empleadosStats).map(emp => {
+//         const totalDiasGrupo = diasPorGrupo[emp.id_grupo] || 1; // Evitar división por cero
+//         return {
+//           ...emp,
+//           porcentajeAsistencia: Math.round((emp.diasAsistidos / totalDiasGrupo) * 100) || 0,
+//           porcentajeCompletos: Math.round((emp.diasCompletos / totalDiasGrupo) * 100) || 0,
+//           porcentajeIncompletos: Math.round((emp.diasIncompletos / totalDiasGrupo) * 100) || 0,
+//           porcentajeAusencias: Math.round((emp.diasAusentes / totalDiasGrupo) * 100) || 0
+//         };
+//       });
+
+//       // Ordenar por porcentaje de asistencia (de mayor a menor)
+//       empleadosArray.sort((a, b) => b.porcentajeAsistencia - a.porcentajeAsistencia);
+
+//       // Función para generar el resumen de empleados
+//       const generateSummaryHTML = () => {
+//         return `
+//           <div style="page-break-after: always;">
+//             <div class="header">
+//               <h1>Resumen de Asistencias</h1>
+//               <p>Generado el ${formatDate(now)} a las ${now.toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'})}</p>
+//               <p>Período: ${formatDate(rangoFechas[0]?.fecha)} al ${formatDate(rangoFechas[rangoFechas.length - 1]?.fecha)}</p>
+//             </div>
+            
+//             <div class="stats">
+//               <div class="stat-item">
+//                 <div class="stat-value">${estadisticas.totalDias}</div>
+//                 <div class="stat-label">Días del período</div>
+//               </div>
+//               <div class="stat-item">
+//                 <div class="stat-value">${empleadosArray.length}</div>
+//                 <div class="stat-label">Empleados</div>
+//               </div>
+//               <div class="stat-item">
+//                 <div class="stat-value">${estadisticas.totalAsistencias}</div>
+//                 <div class="stat-label">Registros totales</div>
+//               </div>
+//               <div class="stat-item">
+//                 <div class="stat-value">${estadisticas.porcentajeAsistencia}</div>
+//                 <div class="stat-label">Asistencia general</div>
+//               </div>
+//             </div>
+            
+//             <div style="margin-top: 20px; overflow-x: auto;">
+//               <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+//                 <thead>
+//                   <tr style="background-color: #f8fafc; text-transform: uppercase; color: #64748b; font-size: 10px; text-align: left;">
+//                     <th style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0;">Empleado</th>
+//                     <th style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">Grupo</th>
+//                     <th style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">Días Asistidos</th>
+//                     <th style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">Días Laborales</th>
+//                     <th style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">Días Incompletos</th>
+//                     <th style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">Días Ausentes</th>
+//                     <th style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">% Asistencia</th>
+//                   </tr>
+//                 </thead>
+//                 <tbody>
+//                   ${empleadosArray.map(emp => `
+//                     <tr style="border-bottom: 1px solid #e2e8f0;">
+//                       <td style="padding: 8px 12px;">${emp.nombre} ${emp.apellido}</td>
+//                       <td style="padding: 8px 12px; text-align: center;">${emp.grupo}</td>
+//                       <td style="padding: 8px 12px; text-align: center;">${emp.diasAsistidos} <small>(${emp.porcentajeAsistencia}%)</small></td>
+//                       <td style="padding: 8px 12px; text-align: center;">${diasPorGrupo[emp.id_grupo] || 0} <small>días laborales</small></td>
+//                       <td style="padding: 8px 12px; text-align: center;">${emp.diasIncompletos} <small>(${emp.porcentajeIncompletos}%)</small></td>
+//                       <td style="padding: 8px 12px; text-align: center;">${emp.diasAusentes} <small>(${emp.porcentajeAusencias}%)</small></td>
+//                       <td style="padding: 8px 12px; text-align: center;">
+//                         <div style="display: flex; align-items: center; gap: 8px;">
+//                           <div style="flex-grow: 1; height: 8px; background-color: #e2e8f0; border-radius: 4px; overflow: hidden;">
+//                             <div style="width: ${emp.porcentajeAsistencia}%; height: 100%; background-color: #22c55e;"></div>
+//                           </div>
+//                           <span>${emp.porcentajeAsistencia}%</span>
+//                         </div>
+//                       </td>
+//                     </tr>
+//                   `).join('')}
+//                 </tbody>
+//               </table>
+//             </div>
+//           </div>
+//         `;
+//       };
+
+//       // Función para generar el HTML de un día
+//       const generateDayHTML = (dia) => {
+//         const totalAsistencias = dia.asistencias?.length || 0;
+//         const asistenciasCompletas = dia.asistencias?.filter(a => a.estado === 'completo').length || 0;
+//         const asistenciasIncompletas = dia.asistencias?.filter(a => a.estado !== 'completo').length || 0;
+        
+//         let html = `
+//           <div style="page-break-inside: avoid; margin-bottom: 5px; border: 1px solid #e2e8f0; border-radius: 4px; overflow: hidden;">
+//             <!-- Encabezado del día -->
+//             <div style="padding: 8px 16px; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+//               <div style="display: flex; justify-content: space-between; align-items: center;">
+//                 <div style="display: flex; align-items: center;">
+//                   <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #1e293b;">
+//                     ${dia.dia}, ${formatDate(dia.fecha)}
+//                   </h3>
+//                 </div>
+//                 <div style="display: flex; align-items: center; gap: 16px;">
+//                   <div style="font-size: 14px; color: #475569; display: flex; gap: 8px;">
+//                     <span style="display: flex; align-items: center;">
+//                       <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #22c55e; margin-right: 4px;"></span>
+//                       ${asistenciasCompletas} Completas
+//                     </span>
+//                     <span style="display: flex; align-items: center;">
+//                       <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #eab308; margin-right: 4px;"></span>
+//                       ${asistenciasIncompletas} Incompletas
+//                     </span>
+//                   </div>
+//                   <span style="font-size: 12px; background-color: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 9999px;">
+//                     ${totalAsistencias} registros
+//                   </span>
+//                 </div>
+//               </div>
+//             </div>
+            
+//             <!-- Tabla de asistencias -->
+//             <div style="overflow-x: auto;">
+//               <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+//                 <thead style="background-color: #f8fafc; font-size: 12px; text-transform: uppercase; color: #64748b; text-align: left;">
+//                   <tr>
+//                     <th style="padding: 6px 12px; font-weight: 500;">Empleado</th>
+//                     <th style="padding: 6px 12px; font-weight: 500; text-align: center;">Grupo</th>
+//                     <th style="padding: 6px 12px; font-weight: 500; text-align: center;">Entrada</th>
+//                     <th style="padding: 6px 12px; font-weight: 500; text-align: center;">Salida</th>
+//                     <th style="padding: 6px 12px; font-weight: 500; text-align: center;">Estado</th>
+//                   </tr>
+//                 </thead>
+//                 <tbody style="font-size: 13px;">
+//                   ${dia.asistencias?.map(asistencia => {
+//                     const estadoStyles = {
+//                       'completo': 'background-color: #dcfce7; color: #166534;',
+//                       'sin_entrada': 'background-color: #fef9c3; color: #854d0e;',
+//                       'sin_salida': 'background-color: #fef9c3; color: #854d0e;',
+//                       'ausente': 'background-color: #fee2e2; color: #991b1b;'
+//                     };
+//                     const estadoText = {
+//                       'completo': 'completo',
+//                       'sin_entrada': 'sin entrada',
+//                       'sin_salida': 'sin salida',
+//                       'ausente': 'ausente'
+//                     };
+                    
+//                     return `
+//                       <tr style="border-top: 1px solid #e2e8f0;">
+//                         <td style="padding: 6px 12px; color: #1e293b;">
+//                           ${asistencia.nombre} ${asistencia.apellido}
+//                         </td>
+//                         <td style="padding: 6px 12px; text-align: center; color: #475569;">
+//                           ${asistencia.grupo || '-'}
+//                         </td>
+//                         <td style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">
+//                           ${formatTime(asistencia.entrada)}
+//                         </td>
+//                         <td style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">
+//                           ${formatTime(asistencia.salida)}
+//                         </td>
+//                         <td style="padding: 6px 12px; text-align: center;">
+//                           <span style="display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 12px; ${estadoStyles[asistencia.estado] || ''}">
+//                             ${estadoText[asistencia.estado] || asistencia.estado}
+//                           </span>
+//                         </td>
+//                       </tr>
+//                     `;
+//                   }).join('')}
+//                 </tbody>
+//               </table>
+//             </div>
+//           </div>
+//         `;
+        
+//         return html;
+//       };
+      
+//       const allDaysHTML = rangoFechas.map(generateDayHTML).join('');
+//       const summaryHTML = generateSummaryHTML();
+
+//       const html = `
+//       <!DOCTYPE html>
+//       <html>
+//       <head>
+//         <meta charset="UTF-8">
+//         <title>Reporte de Asistencia</title>
+//         <style>
+//           @page {
+//             size: A4;
+//             margin: 10mm;
+//           }
+//           body {
+//             font-family: Arial, sans-serif;
+//             line-height: 1.6;
+//             color: #333;
+//             padding: 0;
+//             margin: 0;
+//           }
+//           .header {
+//             text-align: center;
+//             padding-bottom: 16px;
+//           }
+//           .header h1 {
+//             margin: 0;
+//             color: #1e40af;
+//             font-size: 24px;
+//           }
+//           .header h2 {
+//             margin: 16px 0 8px;
+//             color: #1e40af;
+//             font-size: 18px;
+//             border-bottom: 1px solid #e2e8f0;
+//             padding-bottom: 8px;
+//           }
+//           .header p {
+//             margin: 4px 0 0;
+//             color: #64748b;
+//             font-size: 14px;
+//           }
+//           .stats {
+//             display: flex;
+//             justify-content: space-around;
+//             background-color: #f8fafc;
+//             padding: 16px;
+//             border-radius: 8px;
+//             margin-bottom: 20px;
+//             font-size: 14px;
+//           }
+//           .stat-item {
+//             text-align: center;
+//             min-width: 100px;
+//           }
+//           .stat-value {
+//             font-size: 20px;
+//             font-weight: 600;
+//             color: #1e40af;
+//             margin-bottom: 4px;
+//           }
+//           .stat-label {
+//             color: #64748b;
+//             font-size: 12px;
+//             text-transform: uppercase;
+//             letter-spacing: 0.05em;
+//           }
+//           .page-break {
+//             page-break-after: always;
+//           }
+//           table {
+//             width: 100%;
+//             border-collapse: collapse;
+//             margin: 16px 0;
+//           }
+//           th {
+//             background-color: #f8fafc;
+//             color: #64748b;
+//             font-weight: 500;
+//             text-align: left;
+//             padding: 8px 12px;
+//             border-bottom: 1px solid #e2e8f0;
+//             font-size: 12px;
+//             text-transform: uppercase;
+//             letter-spacing: 0.05em;
+//           }
+//           td {
+//             padding: 8px 12px;
+//             border-bottom: 1px solid #e2e8f0;
+//             font-size: 13px;
+//           }
+//           tr:hover {
+//             background-color: #f8fafc;
+//           }
+//           small {
+//             font-size: 11px;
+//             color: #94a3b8;
+//           }
+//         </style>
+//       </head>
+//       <body>
+        
+//         <div class="header">
+//           <h2>Detalle de Asistencias por Día</h2>
+//           <p>Período: ${formatDate(rangoFechas[0]?.fecha)} al ${formatDate(rangoFechas[rangoFechas.length - 1]?.fecha)}</p>
+//         </div>
+        
+//         ${allDaysHTML}
+//       </body>
+//       </html>
+//     `;
+//     // ${summaryHTML} se supone que va en otra parte perooo esta mal estadisticamente hablando asi que meh
+
+//       await page.setContent(html, { waitUntil: 'domcontentloaded' });
+        
+//       const pdfPath = path.join(reportsDir, `reporte_completo.pdf`);
+      
+//       await page.pdf({
+//         path: pdfPath,
+//         format: 'A4',
+//         printBackground: true,
+//         margin: {
+//           top: '10mm',
+//           right: '10mm',
+//           bottom: '10mm',
+//           left: '20mm'
+//         }
+//       });
+//       console.log(`Reporte generado: ${pdfPath}`);
+      
+//       await browser.close();
+      
+//       return { success: true, path: pdfPath,error: null };
+//     } catch (error) {
+//       await browser.close();
+//       console.error('Error al generar el PDF:', error);
+//       return { success: false, error: {...error,path:reportsDir} };
+//     }
+    
+//   } catch (error) {
+//     console.error('Error al crear el directorio de reportes:', reportsDir);
+//     return { success: false, error: {...error,path:reportsDir} };
+//   }
+// }
+
 async function handlePrintReport(event, data) {
   if (!data || !data.data) {
     return { success: false, error: 'No se proporcionaron datos de asistencia' };
@@ -1432,7 +1892,6 @@ async function handlePrintReport(event, data) {
     return { success: false, error: {...error,path:reportsDir} };
   }
 }
-
 const createWindow = () => {
   const win = new BrowserWindow({
     width: 1080,

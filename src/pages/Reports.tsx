@@ -163,7 +163,7 @@ const Reports = () => {
         fechaInicio: formatDateForAPI(dateRange.startDate),
         fechaFin: formatDateForAPI(dateRange.endDate)
       });
-      
+      console.log('result',result);
             setCalculedAttendance(result);
       setIsDateModalOpen(false);
             

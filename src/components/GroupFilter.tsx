@@ -21,7 +21,7 @@ const GroupFilter: React.FC<GroupFilterProps> = ({ groups,selectedGroup, onGroup
     >
       <div className="flex items-center space-x-4">
         <Filter className="w-5 h-5 text-gray-600" />
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 w-full max-w-full overflow-x-auto">
           {groups && groups.length > 0 && groups.map((group, index) => (
             <motion.button
               key={group.id_grupo}
@@ -31,7 +31,7 @@ const GroupFilter: React.FC<GroupFilterProps> = ({ groups,selectedGroup, onGroup
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => onGroupChange(group.id_grupo)}
-              className={`px-4 py-2 rounded-lg transition-all duration-200 ${
+              className={`px-4 h-[45px] w-auto flex items-center justify-center text-nowrap rounded-lg transition-all duration-200 ${
                 selectedGroup === group.id_grupo
                   ? 'bg-theme-3-900 text-white shadow-lg'
                   : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 hover:border-gray-400'
